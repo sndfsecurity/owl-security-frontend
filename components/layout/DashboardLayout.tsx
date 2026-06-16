@@ -13,23 +13,27 @@ export default function DashboardLayout({
     useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="flex min-h-screen bg-slate-100">
+
       <Sidebar
         open={sidebarOpen}
         setOpen={setSidebarOpen}
       />
 
-      <div className="lg:ml-64">
+      <div className="flex-1 flex flex-col">
+
         <Header
           onMenuClick={() =>
             setSidebarOpen(true)
           }
         />
 
-        <main className="p-3 sm:p-4 md:p-6">
+        <main className="flex-1 p-3 sm:p-4 md:p-6">
           {children}
         </main>
+
       </div>
+
     </div>
   );
 }
