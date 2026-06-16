@@ -209,9 +209,7 @@ export default function ClientDashboardPage() {
 
       <tbody>
 
-        {reports
-          .slice()
-          .reverse()
+       {reports
           .slice(0, 5)
           .map((report: any) => (
 
