@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { getReports, getReportsByDate } from "@/services/reportService";
+import { getReports,   getReportsByDateRange
+ } from "@/services/reportService";
 import { getClients } from "@/services/clientService";
 
 export default function ReportsPage() {
@@ -13,7 +14,13 @@ export default function ReportsPage() {
   const [selectedImage, setSelectedImage] =
   useState<string | null>(null);
 
-  const [selectedDate, setSelectedDate] = useState("");
+
+  const [selectedClient, setSelectedClient] = useState("");
+
+  const [fromDate, setFromDate] = useState("");
+
+  const [toDate, setToDate] = useState("");
+
 
   const loadReports = async () => {
     try {
@@ -46,13 +53,12 @@ export default function ReportsPage() {
       : "Unknown";
   };
 
-
   const handleSearch = async () => {
 
-  if (!selectedDate) {
+  if (!fromDate || !toDate) {
 
     alert(
-      "Please select a date"
+      "Please select From Date and To Date"
     );
 
     return;
@@ -60,15 +66,15 @@ export default function ReportsPage() {
 
   try {
 
-    const formattedDate =
-      selectedDate
-        .split("-")
-        .reverse()
-        .join("-");
-
     const data =
-      await getReportsByDate(
-        formattedDate
+      await getReportsByDateRange(
+        fromDate,
+        toDate,
+        selectedClient
+          ? Number(
+              selectedClient
+            )
+          : undefined
       );
 
     setReports(data);
@@ -80,12 +86,15 @@ export default function ReportsPage() {
     alert(
       "Failed to search reports"
     );
+
   }
 };
 
 const handleReset = async () => {
 
-  setSelectedDate("");
+  setSelectedClient("");
+  setFromDate("");
+  setToDate("");
 
   loadReports();
 };
@@ -106,13 +115,54 @@ const handleReset = async () => {
 
         <div className="bg-white rounded-xl shadow overflow-x-auto">
 
-            <div className="flex items-center gap-3 mb-4">
+         
+         <div className="flex items-center gap-3 mb-4 flex-wrap">
+
+  <select
+    value={selectedClient}
+    onChange={(e) =>
+      setSelectedClient(
+        e.target.value
+      )
+    }
+    className="border p-2 rounded"
+  >
+
+    <option value="">
+      All Clients
+    </option>
+
+    {clients.map(
+      (client) => (
+
+        <option
+          key={client.id}
+          value={client.id}
+        >
+          {client.companyName}
+        </option>
+
+      )
+    )}
+
+  </select>
 
   <input
     type="date"
-    value={selectedDate}
+    value={fromDate}
     onChange={(e) =>
-      setSelectedDate(
+      setFromDate(
+        e.target.value
+      )
+    }
+    className="border p-2 rounded"
+  />
+
+  <input
+    type="date"
+    value={toDate}
+    onChange={(e) =>
+      setToDate(
         e.target.value
       )
     }
@@ -134,6 +184,8 @@ const handleReset = async () => {
   </button>
 
 </div>
+     
+         
 
           <table className="w-full">
             <thead>

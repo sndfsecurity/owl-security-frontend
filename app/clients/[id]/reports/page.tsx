@@ -12,7 +12,9 @@ import { uploadImage }
 import {
   createReport,
   getReportsByClientId,
+  deleteReport,
 } from "@/services/reportService";
+
 
 export default function ClientReportsPage() {
   const params = useParams();
@@ -124,6 +126,46 @@ export default function ClientReportsPage() {
     );
 
   }
+};
+
+
+const handleDeleteReport =
+  async (
+    reportId: number
+  ) => {
+
+    const confirmDelete =
+      window.confirm(
+        "Are you sure you want to delete this report?"
+      );
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    try {
+
+      await deleteReport(
+        reportId
+      );
+
+      setReports(
+        reports.filter(
+          (report) =>
+            report.id !== reportId
+        )
+      );
+
+    } catch (error) {
+
+      console.error(error);
+
+      alert(
+        "Failed to delete report"
+      );
+
+    }
+
 };
   
   useEffect(() => {
@@ -308,6 +350,12 @@ export default function ClientReportsPage() {
                 Image
               </th>
 
+              <th className="p-3 text-left">
+                Action
+              </th>
+
+
+
             </tr>
           </thead>
 
@@ -361,6 +409,21 @@ export default function ClientReportsPage() {
                       )}
 
                     </td>
+
+
+                    <td className="p-3">
+
+                        <button
+                          onClick={() =>
+                            handleDeleteReport(
+                              report.id
+                            )
+                          }
+                          className="bg-red-600 text-white px-3 py-1 rounded">
+                          Delete
+                        </button>
+
+                      </td>
 
                 </tr>
               )
