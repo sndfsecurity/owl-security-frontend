@@ -10,7 +10,7 @@ export default function Header({
   onMenuClick,
 }: HeaderProps) {
   return (
-    <header className="h-20 md:h-28 lg:h-40 bg-slate-200 border-b border-slate-400 flex items-center justify-between px-4 md:px-8 shadow-sm">
+    <header className="h-20 md:h-28 lg:h-40 bg-slate-200 border-b-2 border-red-400 flex items-center justify-between px-4 md:px-8 shadow-sm">
 
       {/* Left Section */}
       <div className="flex items-center gap-3">
@@ -39,9 +39,7 @@ export default function Header({
         <h1 className="text-base sm:text-lg md:text-3xl lg:text-5xl font-extrabold tracking-wide leading-tight">
           <span className="text-slate-900">OWL</span>{" "}
           <span className="text-blue-600">SECURITY</span>
-         <span className="text-slate-700">
-  {" "}PORTAL
-</span>
+          <span className="text-slate-700"> PORTAL</span>
         </h1>
 
       </div>
