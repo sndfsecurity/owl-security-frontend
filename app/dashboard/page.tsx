@@ -13,54 +13,74 @@ export default function DashboardPage() {
   });
 
   useEffect(() => {
-  const loadDashboard = async () => {
-    try {
-      const data = await getDashboardData();
+    const loadDashboard = async () => {
+      try {
+        const data = await getDashboardData();
 
-      console.log("DASHBOARD DATA:", data);
+        console.log("DASHBOARD DATA:", data);
 
-      setStats(data);
-    } catch (error) {
-      console.error("Dashboard Error:", error);
-    }
-  };
+        setStats(data);
+      } catch (error) {
+        console.error("Dashboard Error:", error);
+      }
+    };
 
-  loadDashboard();
-}, []);
-  
+    loadDashboard();
+  }, []);
 
   return (
     <DashboardLayout>
-      <h1 className="text-3xl font-bold mb-6">
-        Dashboard
-      </h1>
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+          Dashboard
+        </h1>
+        <p className="text-gray-500 mt-2">
+          Welcome back! Here's your dashboard overview.
+        </p>
+      </div>
 
-      <div className="grid grid-cols-4 gap-4">
-
-        <div className="bg-white rounded-xl p-5 shadow">
-          <h3>Total Clients</h3>
-          <p className="text-3xl font-bold mt-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        
+        {/* Total Clients */}
+        <div className="relative overflow-hidden rounded-2xl p-6 shadow-lg bg-gradient-to-br from-blue-500 to-cyan-500 text-white transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-8 -mt-8"></div>
+          <h3 className="text-sm font-medium opacity-90">
+            Total Clients
+          </h3>
+          <p className="text-4xl font-bold mt-3">
             {stats.totalClients}
           </p>
         </div>
 
-        <div className="bg-white rounded-xl p-5 shadow">
-          <h3>Total Reports</h3>
-          <p className="text-3xl font-bold mt-2">
+        {/* Total Reports */}
+        <div className="relative overflow-hidden rounded-2xl p-6 shadow-lg bg-gradient-to-br from-purple-500 to-pink-500 text-white transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-8 -mt-8"></div>
+          <h3 className="text-sm font-medium opacity-90">
+            Total Reports
+          </h3>
+          <p className="text-4xl font-bold mt-3">
             {stats.totalReports}
           </p>
         </div>
 
-        <div className="bg-white rounded-xl p-5 shadow">
-          <h3>Reports Today</h3>
-          <p className="text-3xl font-bold mt-2">
+        {/* Reports Today */}
+        <div className="relative overflow-hidden rounded-2xl p-6 shadow-lg bg-gradient-to-br from-emerald-500 to-green-600 text-white transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-8 -mt-8"></div>
+          <h3 className="text-sm font-medium opacity-90">
+            Reports Today
+          </h3>
+          <p className="text-4xl font-bold mt-3">
             {stats.reportsToday}
           </p>
         </div>
 
-        <div className="bg-white rounded-xl p-5 shadow">
-          <h3>High Alerts</h3>
-          <p className="text-3xl font-bold mt-2">
+        {/* High Alerts */}
+        <div className="relative overflow-hidden rounded-2xl p-6 shadow-lg bg-gradient-to-br from-red-500 to-orange-500 text-white transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-8 -mt-8"></div>
+          <h3 className="text-sm font-medium opacity-90">
+            High Alerts
+          </h3>
+          <p className="text-4xl font-bold mt-3">
             {stats.alerts}
           </p>
         </div>
