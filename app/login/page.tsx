@@ -94,7 +94,7 @@ export default function LoginPage() {
               {loading ? (
                 <>
                   <span className={styles.spinner}></span>
-                  Please Wait...
+                  ⏳ Please Wait...
                 </>
               ) : (
                 "Login"

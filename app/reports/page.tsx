@@ -11,6 +11,7 @@ export default function ReportsPage() {
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+
   const [selectedImage, setSelectedImage] =
   useState<string | null>(null);
 
@@ -23,27 +24,59 @@ export default function ReportsPage() {
 
   const [toDate, setToDate] = useState("");
 
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
-  const loadReports = async () => {
-    try {
-      const reportsData = await getReports();
-      const clientsData = await getClients();
+  const [isFilterMode, setIsFilterMode] = useState(false);
 
-      console.log("REPORTS:", reportsData);
-      console.log("CLIENTS:", clientsData);
+  const loadReports = async (
+  currentPage = page
+) => {
 
-      setReports(reportsData);
-      setClients(clientsData);
-    } catch (error) {
-      console.error("Error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
 
-  useEffect(() => {
-    loadReports();
-  }, []);
+    setLoading(true);
+
+    const reportsData =
+      await getReports(
+        currentPage,
+        10
+      );
+
+    const clientsData =
+      await getClients();
+
+    setReports(
+      reportsData.content
+    );
+
+    setTotalPages(
+      reportsData.totalPages
+    );
+
+    setClients(
+      clientsData
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+  } finally {
+
+    setLoading(false);
+
+  }
+
+};
+
+// ADD THIS HERE
+
+useEffect(() => {
+
+  loadReports(page);
+
+}, [page]);
 
   const getClientName = (clientId: number) => {
     const client = clients.find(
@@ -73,13 +106,25 @@ export default function ReportsPage() {
         fromDate,
         toDate,
         selectedClient
-          ? Number(
-              selectedClient
-            )
-          : undefined
+          ? Number(selectedClient)
+          : undefined,
+        0,
+        10
       );
 
-    setReports(data);
+      setIsFilterMode(true);
+
+      setPage(0);
+
+      setReports(
+        data.content
+      );
+
+      setTotalPages(
+        data.totalPages
+      );
+
+      return;
 
   } catch (error) {
 
@@ -98,7 +143,11 @@ const handleReset = async () => {
   setFromDate("");
   setToDate("");
 
-  loadReports();
+ setIsFilterMode(false);
+
+  setPage(0);
+
+  loadReports(0);
 };
 
   return (
@@ -197,13 +246,9 @@ const handleReset = async () => {
         <div className="flex justify-between items-start mb-3">
 
           <div>
-            <h3 className="font-bold text-2xl">
-  Notes
-</h3>
-
-            <p className="text-xs text-gray-500">
-              Report #{report.id}
-            </p>
+            <h3 className="font-bold text-xl text-slate-900">
+              {getClientName(report.clientId)}
+            </h3>
           </div>
 
           <span
@@ -332,7 +377,6 @@ const handleReset = async () => {
   <table className="w-full min-w-[1000px] border-collapse">
     <thead>
       <tr className="bg-gray-100 border-b">
-        <th className="p-3 text-left">ID</th>
         <th className="p-3 text-left">Client</th>
         <th className="p-3 text-left">Date</th>
         <th className="p-3 text-left">Time</th>
@@ -347,9 +391,7 @@ const handleReset = async () => {
       {reports.map((report: any) => (
         <tr
           key={report.id}
-          className="border-b hover:bg-gray-50"
-        >
-          <td className="p-3">{report.id}</td>
+          className="border-b hover:bg-gray-50">
           <td className="p-3">
             {getClientName(report.clientId)}
           </td>
@@ -357,7 +399,7 @@ const handleReset = async () => {
           <td className="p-3">{report.reportTime}</td>
           <td className="p-3">{report.status}</td>
           <td className="p-3">{report.priority}</td>
-<td className="p-3 max-w-[250px]">
+          <td className="p-3 max-w-[250px]">
 
   <div className="break-words">
 
@@ -424,9 +466,46 @@ const handleReset = async () => {
       </div>
     )}
 
+
+    <div className="flex justify-center items-center gap-3 mt-6">
+
+  <button
+    disabled={page === 0}
+    onClick={() =>
+      setPage(page - 1)
+    }
+    className="bg-gray-600 text-white px-4 py-2 rounded disabled:opacity-50"
+  >
+    Previous
+  </button>
+
+  <span className="font-medium">
+
+    Page {page + 1}
+    {" "}
+    of
+    {" "}
+    {totalPages}
+
+  </span>
+
+  <button
+    disabled={
+      page >= totalPages - 1
+    }
+    onClick={() =>
+      setPage(page + 1)
+    }
+    className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+  >
+    Next
+  </button>
+
+</div>
+
     {selectedImage && (
 
-      <div className="fixed inset-0 bg-black/80 flex justify-center items-center z-50 p-4">
+      <div className="fixed inset-0 bg-black/80 flex justify-center items-center z-50 p-4 mt-25">
 
         <div className="bg-white p-3 rounded-lg max-w-4xl w-full">
 
@@ -436,8 +515,7 @@ const handleReset = async () => {
               onClick={() =>
                 setSelectedImage(null)
               }
-              className="bg-red-600 text-white px-3 py-1 rounded"
-            >
+              className="bg-red-600 text-white px-3 py-1 rounded">
               Close
             </button>
 
@@ -446,7 +524,7 @@ const handleReset = async () => {
           <img
             src={selectedImage}
             alt="Report"
-            className="max-w-full max-h-[80vh] mx-auto rounded"
+            className="max-w-full max-h-[65vh] mx-auto rounded"
           />
 
         </div>
@@ -471,8 +549,7 @@ const handleReset = async () => {
           onClick={() =>
             setSelectedNotes(null)
           }
-          className="text-red-600 font-medium"
-        >
+          className="text-red-600 font-medium">
           Close
         </button>
 

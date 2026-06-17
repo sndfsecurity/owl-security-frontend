@@ -27,10 +27,17 @@ export default function ClientReportsPage() {
 
   const [reports, setReports] = useState<any[]>([]);
 
+  const [page, setPage] = useState(0);
+
+  const [totalPages, setTotalPages] = useState(0);
+
   const [selectedImage, setSelectedImage] =
   useState<File | null>(null);
 
   const [selectedViewImage, setSelectedViewImage] =
+  useState<string | null>(null);
+
+  const [selectedNotes, setSelectedNotes] =
   useState<string | null>(null);
 
   const [reportData, setReportData] =
@@ -53,18 +60,34 @@ export default function ClientReportsPage() {
     }
   };
 
-  const loadReports = async () => {
-    try {
-      const data =
-        await getReportsByClientId(
-          clientId
-        );
+  const loadReports = async (
+  currentPage = page
+) => {
 
-      setReports(data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  try {
+
+    const data =
+      await getReportsByClientId(
+        clientId,
+        currentPage,
+        5
+      );
+
+    setReports(
+      data.content
+    );
+
+    setTotalPages(
+      data.totalPages
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+  }
+
+};
 
   const handleSubmit = async () => {
 
@@ -145,16 +168,9 @@ const handleDeleteReport =
 
     try {
 
-      await deleteReport(
-        reportId
-      );
+      await deleteReport(reportId);
 
-      setReports(
-        reports.filter(
-          (report) =>
-            report.id !== reportId
-        )
-      );
+      loadReports(page);
 
     } catch (error) {
 
@@ -168,10 +184,17 @@ const handleDeleteReport =
 
 };
   
-  useEffect(() => {
-    loadClient();
-    loadReports();
-  }, [clientId]);
+useEffect(() => {
+
+  loadClient();
+
+}, [clientId]);
+
+useEffect(() => {
+
+  loadReports(page);
+
+}, [clientId, page]);
 
   return (
     <DashboardLayout>
@@ -208,8 +231,7 @@ const handleDeleteReport =
                   status: e.target.value,
                 })
               }
-              className="border p-2 rounded"
-            >
+              className="border p-2 rounded">
               <option value="NORMAL">
                 NORMAL
               </option>
@@ -382,8 +404,49 @@ const handleDeleteReport =
                     {report.priority}
                   </td>
 
-                  <td className="p-3">
-                    {report.notes}
+                  
+                  <td className="p-3 max-w-[280px]">
+
+                    <div className="break-words">
+
+                      {report.notes
+                        ? report.notes.substring(0, 50)
+                        : "No Notes"}
+
+                      {report.notes &&
+                        report.notes.length > 50 &&
+                        "..."}
+
+                    </div>
+
+                    {report.notes &&
+                      report.notes.length > 50 && (
+
+                        <button
+                          onClick={() =>
+                            setSelectedNotes(
+                              report.notes
+                            )
+                          }
+                          className="
+                            mt-2
+                            px-3
+                            py-1.5
+                            text-sm
+                            font-medium
+                            bg-green-600
+                            text-white
+                            rounded-lg
+                            hover:bg-green-700
+                            transition
+                            shadow-sm
+                          "
+                        >
+                          Read More
+                        </button>
+
+                    )}
+
                   </td>
 
                    
@@ -456,7 +519,7 @@ const handleDeleteReport =
 
         <div>
           <h3 className="font-bold text-lg text-slate-800">
-            Report #{report.id}
+            CCTV Monitoring Report
           </h3>
 
           <p className="text-sm text-slate-500">
@@ -579,13 +642,64 @@ const handleDeleteReport =
 
 </div>
 
-       {selectedViewImage && (
+
+<div className="flex justify-center items-center gap-3 mt-6">
+
+  <button
+    disabled={page === 0}
+    onClick={() =>
+      setPage(page - 1)
+    }
+    className="
+      bg-gray-600
+      text-white
+      px-4
+      py-2
+      rounded
+      disabled:opacity-50
+    "
+  >
+    Previous
+  </button>
+
+  <span className="font-medium">
+
+    Page {page + 1}
+    {" "}
+    of
+    {" "}
+    {totalPages}
+
+  </span>
+
+  <button
+    disabled={
+      page >= totalPages - 1
+    }
+    onClick={() =>
+      setPage(page + 1)
+    }
+    className="
+      bg-blue-600
+      text-white
+      px-4
+      py-2
+      rounded
+      disabled:opacity-50
+    "
+  >
+    Next
+  </button>
+
+</div>
+
+{selectedViewImage && (
 
   <div
     className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
   >
 
-    <div className="bg-white p-4 rounded-lg max-w-4xl max-h-[90vh] overflow-auto">
+    <div className="bg-white p-4 rounded-lg max-w-4xl max-h-[90vh] overflow-auto mt-25">
 
       <div className="flex justify-end mb-3">
 
@@ -603,7 +717,7 @@ const handleDeleteReport =
       <img
         src={`http://localhost:8080/uploads/${selectedViewImage}`}
         alt="Report"
-        className="max-w-full max-h-[80vh] rounded"
+        className="max-w-full max-h-[65vh] rounded"
       />
 
     </div>
@@ -611,6 +725,81 @@ const handleDeleteReport =
   </div>
 
 )}
+
+
+{selectedNotes && (
+
+  <div className="
+    fixed
+    inset-0
+    bg-black/60
+    flex
+    justify-center
+    items-center
+    z-50
+    p-4
+  ">
+
+    <div className="
+      bg-white
+      rounded-2xl
+      w-full
+      max-w-md
+      shadow-xl
+    ">
+
+      <div className="
+        flex
+        justify-between
+        items-center
+        border-b
+        p-4
+      ">
+
+        <h3 className="
+          font-semibold
+          text-lg
+        ">
+          Notes
+        </h3>
+
+        <button
+          onClick={() =>
+            setSelectedNotes(null)
+          }
+          className="
+            text-red-600
+            font-medium
+          "
+        >
+          Close
+        </button>
+
+      </div>
+
+      <div className="
+        p-4
+        max-h-[60vh]
+        overflow-y-auto
+      ">
+
+        <p className="
+          text-gray-700
+          whitespace-pre-wrap
+          text-lg
+          leading-8
+        ">
+          {selectedNotes}
+        </p>
+
+      </div>
+
+    </div>
+
+  </div>
+
+)}
+   
 
     </DashboardLayout>
   );

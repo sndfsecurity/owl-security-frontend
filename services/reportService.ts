@@ -1,32 +1,42 @@
 import API_BASE_URL from "./api";
 
-export async function getReports() {
-  const token = localStorage.getItem("token");
+export async function getReports(
+  page: number = 0,
+  size: number = 10
+) {
+  const token =
+    localStorage.getItem("token");
 
-  const response = await fetch(
-    `${API_BASE_URL}/api/reports`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+  const response =
+    await fetch(
+      `${API_BASE_URL}/api/reports?page=${page}&size=${size}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization:
+            `Bearer ${token}`,
+        },
+      }
+    );
 
   if (!response.ok) {
-    throw new Error("Failed to fetch reports");
+    throw new Error(
+      "Failed to fetch reports"
+    );
   }
 
   return response.json();
 }
 
 export async function getReportsByClientId(
-  clientId: number
+  clientId: number,
+  page: number = 0,
+  size: number = 5,
 ) {
   const token = localStorage.getItem("token");
 
   const response = await fetch(
-    `${API_BASE_URL}/api/reports/client/${clientId}`,
+    `${API_BASE_URL}/api/reports/client/${clientId}?page=${page}&size=${size}`,
     {
       method: "GET",
       headers: {
@@ -154,12 +164,13 @@ export async function deleteReport(
 }
 
 
-
 export async function
 getReportsByDateRange(
   fromDate: string,
   toDate: string,
-  clientId?: number
+  clientId?: number,
+  page: number = 0,
+  size: number = 10
 ) {
 
   const token =
@@ -168,7 +179,7 @@ getReportsByDateRange(
     );
 
   let url =
-    `${API_BASE_URL}/api/reports/range?fromDate=${fromDate}&toDate=${toDate}`;
+`${API_BASE_URL}/api/reports/range?fromDate=${fromDate}&toDate=${toDate}&page=${page}&size=${size}`;
 
   if (clientId) {
 
