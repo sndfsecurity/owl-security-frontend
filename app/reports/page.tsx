@@ -14,6 +14,8 @@ export default function ReportsPage() {
   const [selectedImage, setSelectedImage] =
   useState<string | null>(null);
 
+  const [selectedNotes, setSelectedNotes] =
+  useState<string | null>(null);
 
   const [selectedClient, setSelectedClient] = useState("");
 
@@ -100,181 +102,389 @@ const handleReset = async () => {
 };
 
   return (
-    <DashboardLayout>
-      <h1 className="text-3xl font-bold mb-6">
-        Reports
-      </h1>
+  <DashboardLayout>
+    <h1 className="text-2xl md:text-3xl font-bold mb-6">
+      Reports
+    </h1>
 
-      {loading ? (
-        <p>Loading Reports...</p>
-      ) : (
+    {loading ? (
+      <p>Loading Reports...</p>
+    ) : (
+      <div className="bg-white rounded-xl shadow p-4">
 
+        {/* Filters */}
+        <div className="flex flex-col md:flex-row gap-3 mb-4">
 
-        
-        
+          <select
+            value={selectedClient}
+            onChange={(e) =>
+              setSelectedClient(e.target.value)
+            }
+            className="border p-2 rounded w-full md:w-auto"
+          >
+            <option value="">
+              All Clients
+            </option>
 
-        <div className="bg-white rounded-xl shadow overflow-x-auto">
+            {clients.map((client) => (
+              <option
+                key={client.id}
+                value={client.id}
+              >
+                {client.companyName}
+              </option>
+            ))}
+          </select>
 
-         
-         <div className="flex items-center gap-3 mb-4 flex-wrap">
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(e) =>
+              setFromDate(e.target.value)
+            }
+            className="border p-2 rounded w-full md:w-auto"
+          />
 
-  <select
-    value={selectedClient}
-    onChange={(e) =>
-      setSelectedClient(
-        e.target.value
-      )
-    }
-    className="border p-2 rounded"
-  >
+          <input
+            type="date"
+            value={toDate}
+            onChange={(e) =>
+              setToDate(e.target.value)
+            }
+            className="border p-2 rounded w-full md:w-auto"
+          />
 
-    <option value="">
-      All Clients
-    </option>
+          <button
+            onClick={handleSearch}
+            className="bg-blue-600 text-white px-4 py-2 rounded w-full md:w-auto"
+          >
+            Search
+          </button>
 
-    {clients.map(
-      (client) => (
+          <button
+            onClick={handleReset}
+            className="bg-gray-600 text-white px-4 py-2 rounded w-full md:w-auto"
+          >
+            Reset
+          </button>
 
-        <option
-          key={client.id}
-          value={client.id}
-        >
-          {client.companyName}
-        </option>
-
-      )
-    )}
-
-  </select>
-
-  <input
-    type="date"
-    value={fromDate}
-    onChange={(e) =>
-      setFromDate(
-        e.target.value
-      )
-    }
-    className="border p-2 rounded"
-  />
-
-  <input
-    type="date"
-    value={toDate}
-    onChange={(e) =>
-      setToDate(
-        e.target.value
-      )
-    }
-    className="border p-2 rounded"
-  />
-
-  <button
-    onClick={handleSearch}
-    className="bg-blue-600 text-white px-4 py-2 rounded"
-  >
-    Search
-  </button>
-
-  <button
-    onClick={handleReset}
-    className="bg-gray-600 text-white px-4 py-2 rounded"
-  >
-    Reset
-  </button>
-
-</div>
-     
-         
-
-          <table className="w-full">
-            <thead>
-              <tr className="border-b bg-gray-100">
-                <th className="p-3 text-left">ID</th>
-                <th className="p-3 text-left">Client Name</th>
-                <th className="p-3 text-left">Date</th>
-                <th className="p-3 text-left">Time</th>
-                <th className="p-3 text-left">Status</th>
-                <th className="p-3 text-left">Priority</th>
-                <th className="p-3 text-left">Notes</th>
-                <th className="p-3 text-left">Imge</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {reports.map((report: any) => (
-                <tr
-                  key={report.id}
-                  className="border-b hover:bg-gray-50"
-                >
-                  <td className="p-3">{report.id}</td>
-
-                  <td className="p-3">
-                    {getClientName(report.clientId)}
-                  </td>
-
-                  <td className="p-3">{report.reportDate}</td>
-                  <td className="p-3">{report.reportTime}</td>
-                  <td className="p-3">{report.status}</td>
-                  <td className="p-3">{report.priority}</td>
-                  <td className="p-3">{report.notes}</td>
-
-                  <td className="p-3">
-
-                      {report.imageUrl ? (
-
-                        <button
-                          onClick={() =>
-                            setSelectedImage(
-                              `http://localhost:8080/uploads/${report.imageUrl}`
-                            )
-                          }
-                          className="bg-blue-600 text-white px-3 py-1 rounded"
-                        >
-                          View
-                        </button>
-
-                      ) : (
-
-                        <span>No Image</span>
-
-                      )}
-
-                    </td>
-
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
 
-      )}
+        
+
+{/* Mobile Cards */}
+<div className="grid gap-3 md:hidden">
+  {reports.map((report: any) => (
+    <div
+      key={report.id}
+      className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden"
+    >
+
+      {/* Status Border */}
+      <div
+        className={`h-1 w-full ${
+          report.priority === "High"
+            ? "bg-red-500"
+            : report.priority === "Medium"
+            ? "bg-yellow-500"
+            : "bg-green-500"
+        }`}
+      />
+
+      <div className="p-4">
+
+        {/* Top Row */}
+        <div className="flex justify-between items-start mb-3">
+
+          <div>
+            <h3 className="font-bold text-2xl">
+  Notes
+</h3>
+
+            <p className="text-xs text-gray-500">
+              Report #{report.id}
+            </p>
+          </div>
+
+          <span
+            className={`text-xs px-2 py-1 rounded-md font-medium ${
+              report.priority === "High"
+                ? "bg-red-50 text-red-700"
+                : report.priority === "Medium"
+                ? "bg-yellow-50 text-yellow-700"
+                : "bg-green-50 text-green-700"
+            }`}
+          >
+            {report.priority}
+          </span>
+
+        </div>
+
+        {/* Date & Time */}
+        <div className="flex justify-between text-sm mb-3">
+
+          <div>
+            <p className="text-gray-400 text-xs">
+              Date
+            </p>
+
+            <p className="font-medium">
+              {report.reportDate}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-gray-400 text-xs">
+              Time
+            </p>
+
+            <p className="font-medium">
+              {report.reportTime}
+            </p>
+          </div>
+
+        </div>
+
+        {/* Status */}
+        <div className="mb-3">
+
+          <span
+            className={`inline-flex px-3 py-1 rounded-md text-xs font-medium ${
+              report.status === "Completed"
+                ? "bg-green-100 text-green-700"
+                : report.status === "Pending"
+                ? "bg-orange-100 text-orange-700"
+                : "bg-blue-100 text-blue-700"
+            }`}
+          >
+            {report.status}
+          </span>
+
+        </div>
+
+        {/* Notes */}
+<div className="mb-4">
+
+  <p className="text-xs text-gray-400 mb-1">
+    Notes
+  </p>
+
+  <p className="text-sm text-gray-700 line-clamp-2">
+    {report.notes || "No notes available"}
+  </p>
+
+  {report.notes && report.notes.length > 10 && (
+    <button
+  onClick={() =>
+    setSelectedNotes(report.notes)
+  }
+  className="
+    mt-2
+    px-3
+    py-1.5
+    text-sm
+    font-medium
+    bg-green-600
+    text-white
+    rounded-lg
+    hover:bg-green-700
+    transition
+    shadow-sm
+  "
+>
+  Read More
+</button>
+  )}
+
+</div>
+
+        {/* Footer */}
+        <div className="flex justify-end border-t pt-3">
+
+          {report.imageUrl ? (
+            <button
+              onClick={() =>
+                setSelectedImage(
+                  `http://localhost:8080/uploads/${report.imageUrl}`
+                )
+              }
+              className="text-sm bg-slate-900 text-white px-4 py-2 rounded-lg"
+            >
+              View Image
+            </button>
+          ) : (
+            <span className="text-gray-400 text-sm">
+              No Image
+            </span>
+          )}
+
+        </div>
+
+      </div>
+
+    </div>
+  ))}
+</div>
 
 
-{selectedImage && (
+{/* Desktop Table */}
+<div className="hidden md:block overflow-x-auto">
+  <table className="w-full min-w-[1000px] border-collapse">
+    <thead>
+      <tr className="bg-gray-100 border-b">
+        <th className="p-3 text-left">ID</th>
+        <th className="p-3 text-left">Client</th>
+        <th className="p-3 text-left">Date</th>
+        <th className="p-3 text-left">Time</th>
+        <th className="p-3 text-left">Status</th>
+        <th className="p-3 text-left">Priority</th>
+        <th className="p-3 text-left">Notes</th>
+        <th className="p-3 text-left">Image</th>
+      </tr>
+    </thead>
 
-  <div className="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-50">
+    <tbody>
+      {reports.map((report: any) => (
+        <tr
+          key={report.id}
+          className="border-b hover:bg-gray-50"
+        >
+          <td className="p-3">{report.id}</td>
+          <td className="p-3">
+            {getClientName(report.clientId)}
+          </td>
+          <td className="p-3">{report.reportDate}</td>
+          <td className="p-3">{report.reportTime}</td>
+          <td className="p-3">{report.status}</td>
+          <td className="p-3">{report.priority}</td>
+<td className="p-3 max-w-[250px]">
 
-    <div className="bg-white p-3 rounded-lg">
+  <div className="break-words">
 
-      <div className="flex justify-end mb-2">
+    {report.notes
+      ? report.notes.substring(0, 50)
+      : "No Notes"}
+
+    {report.notes &&
+      report.notes.length > 50 &&
+      "..."}
+
+  </div>
+
+  {report.notes &&
+    report.notes.length > 50 && (
+
+      <button
+  onClick={() =>
+    setSelectedNotes(report.notes)
+  }
+  className="
+    mt-2
+    px-3
+    py-1.5
+    text-sm
+    font-medium
+    bg-green-600
+    text-white
+    rounded-lg
+    hover:bg-green-700
+    transition
+    shadow-sm
+  "
+>
+  Read More
+</button>
+
+  )}
+
+</td>
+          <td className="p-3">
+            {report.imageUrl ? (
+              <button
+                onClick={() =>
+                  setSelectedImage(
+                    `http://localhost:8080/uploads/${report.imageUrl}`
+                  )
+                }
+                className="bg-blue-600 text-white px-3 py-1 rounded"
+              >
+                View
+              </button>
+            ) : (
+              <span>No Image</span>
+            )}
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+
+      </div>
+    )}
+
+    {selectedImage && (
+
+      <div className="fixed inset-0 bg-black/80 flex justify-center items-center z-50 p-4">
+
+        <div className="bg-white p-3 rounded-lg max-w-4xl w-full">
+
+          <div className="flex justify-end mb-2">
+
+            <button
+              onClick={() =>
+                setSelectedImage(null)
+              }
+              className="bg-red-600 text-white px-3 py-1 rounded"
+            >
+              Close
+            </button>
+
+          </div>
+
+          <img
+            src={selectedImage}
+            alt="Report"
+            className="max-w-full max-h-[80vh] mx-auto rounded"
+          />
+
+        </div>
+
+      </div>
+
+    )}
+
+{selectedNotes && (
+
+  <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50 p-4">
+
+    <div className="bg-white rounded-2xl w-full max-w-md shadow-xl">
+
+      <div className="flex justify-between items-center border-b p-4">
+
+        <h3 className="font-semibold text-lg">
+          Notes
+        </h3>
 
         <button
           onClick={() =>
-            setSelectedImage(null)
+            setSelectedNotes(null)
           }
-          className="bg-red-600 text-white px-3 py-1 rounded"
+          className="text-red-600 font-medium"
         >
           Close
         </button>
 
       </div>
 
-      <img
-        src={selectedImage}
-        alt="Report"
-        className="max-h-[80vh]"
-      />
+      <div className="p-4 max-h-[60vh] overflow-y-auto">
+
+        <p className="text-gray-700 whitespace-pre-wrap text-lg leading-8">
+  {selectedNotes}
+</p>
+
+      </div>
 
     </div>
 
@@ -282,6 +492,6 @@ const handleReset = async () => {
 
 )}
 
-    </DashboardLayout>
-  );
+  </DashboardLayout>
+)
 }

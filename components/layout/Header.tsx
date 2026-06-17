@@ -6,57 +6,44 @@ interface HeaderProps {
   onMenuClick?: () => void;
 }
 
-export default function Header({
-  onMenuClick,
-}: HeaderProps) {
+export default function Header({ onMenuClick }: HeaderProps) {
   return (
-    <header className="h-20 md:h-28 lg:h-40 bg-slate-200 border-b-2 border-red-400 flex items-center justify-between px-4 md:px-8 shadow-sm">
+    <header className="sticky top-0 z-[100] h-20 md:h-24 bg-slate-200 border-b-2 border-red-400 shadow-sm">
+      <div className="h-full flex items-center justify-between px-3 sm:px-4 md:px-8">
 
-      {/* Left Section */}
-      <div className="flex items-center gap-3">
+        {/* Left Side */}
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-5 min-w-0">
 
-        {/* Mobile Menu Button */}
-        <button
-          onClick={onMenuClick}
-          className="lg:hidden bg-slate-900 text-white p-2 rounded-lg shadow-lg"
-        >
-          ☰
-        </button>
+          <button
+            onClick={onMenuClick}
+            aria-label="Open menu"
+            className="lg:hidden bg-slate-900 text-white p-2 rounded-lg shadow flex-shrink-0"
+          >
+            ☰
+          </button>
 
-        {/* Mobile Logo */}
-        <div className="lg:hidden">
           <Image
             src="/LOGO.png"
-            alt="Owl Security Logo"
-            width={40}
-            height={40}
-            className="object-contain"
+            alt="OWL Security Logo"
+            width={80}
+            height={80}
             priority
+            className="w-8 h-8 sm:w-10 sm:h-10 md:w-14 md:h-14 lg:w-16 lg:h-16 object-contain flex-shrink-0"
           />
+
+          <h1 className="font-bold leading-tight text-sm sm:text-lg md:text-2xl lg:text-3xl whitespace-nowrap">
+            <span className="text-slate-900">OWL </span>
+            <span className="text-blue-600">SECURITY</span>
+            <span className="text-slate-900"> PORTAL</span>
+          </h1>
         </div>
 
-        {/* Title */}
-        <h1 className="text-base sm:text-lg md:text-3xl lg:text-5xl font-extrabold tracking-wide leading-tight">
-          <span className="text-slate-900">OWL</span>{" "}
-          <span className="text-blue-600">SECURITY</span>
-          <span className="text-slate-700"> PORTAL</span>
-        </h1>
-
-      </div>
-
-      {/* Right Section */}
-      <div className="flex items-center gap-2 md:gap-4">
-
-        <div className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm md:text-xl shadow-md">
+        {/* Right Side */}
+        <div className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm md:text-base flex-shrink-0">
           A
         </div>
 
-        <span className="hidden sm:block text-slate-800 font-semibold text-base md:text-xl">
-          Admin
-        </span>
-
       </div>
-
     </header>
   );
 }
