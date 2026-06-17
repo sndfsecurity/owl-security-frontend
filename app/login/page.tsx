@@ -87,17 +87,35 @@ export default function LoginPage() {
           )}
 
           <button
-            onClick={handleLogin}
-            disabled={loading}
-          >
-            {loading ? "Logging In..." : "Login"}
-          </button>
+              onClick={handleLogin}
+              disabled={loading}
+              className={styles.loginBtn}>
+
+              {loading ? (
+                <>
+                  <span className={styles.spinner}></span>
+                  Please Wait...
+                </>
+              ) : (
+                "Login"
+              )}
+            </button>
+
         </div>
 
-        <div className={styles.bottomText}>
-          Secure Access • Real-Time Monitoring
+       <div className={styles.bottomSection}>
+          <p>Secure Access • Real-Time Monitoring</p>
+
+          <span className={styles.version}>
+            OWL Security Portal v1.0
+          </span>
         </div>
       </div>
+
+       <div className={styles.copyright}>
+        © 2026 Owl Security Services
+      </div>
+
     </div>
   );
 }
