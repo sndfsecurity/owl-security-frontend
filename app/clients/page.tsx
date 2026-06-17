@@ -185,7 +185,7 @@ const handleStatusChange = async (
 
   return (
     <DashboardLayout>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
         <h1 className="text-3xl font-bold">
           Clients
         </h1>
@@ -310,132 +310,213 @@ const handleStatusChange = async (
       )}
 
       {loading ? (
-        <p>Loading Clients...</p>
-      ) : (
-        <div className="bg-white rounded-xl shadow overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b bg-gray-100">
-                <th className="p-3 text-left">ID</th>
-                <th className="p-3 text-left">Company</th>
-                <th className="p-3 text-left">Contact Person</th>
-                <th className="p-3 text-left">Email</th>
-                <th className="p-3 text-left">Phone</th>
-                <th className="p-3 text-left">Status</th>
-                <th className="p-3 text-left">Actions</th>
-              </tr>
-            </thead>
+  <p>Loading Clients...</p>
+) : (
+  <>
+    {/* Desktop Table */}
+    <div className="hidden md:block bg-white rounded-xl shadow overflow-x-auto">
+      <table className="w-full">
+        <thead>
+          <tr className="border-b bg-gray-100">
+            <th className="p-3 text-left">ID</th>
+            <th className="p-3 text-left">Company</th>
+            <th className="p-3 text-left">Contact Person</th>
+            <th className="p-3 text-left">Email</th>
+            <th className="p-3 text-left">Phone</th>
+            <th className="p-3 text-left">Status</th>
+            <th className="p-3 text-left">Actions</th>
+          </tr>
+        </thead>
 
-            <tbody>
-              {clients.map((client: any) => (
-                <tr
-                  key={client.id}
-                  className="border-b hover:bg-gray-50"
+        <tbody>
+          {clients.map((client: any) => (
+            <tr
+              key={client.id}
+              className="border-b hover:bg-gray-50"
+            >
+              <td className="p-3">{client.id}</td>
+
+              <td className="p-3">
+                {client.companyName}
+              </td>
+
+              <td className="p-3">
+                {client.contactPerson}
+              </td>
+
+              <td className="p-3">
+                {client.email}
+              </td>
+
+              <td className="p-3">
+                {client.phone}
+              </td>
+
+              <td className="p-3">
+                <select
+                  value={client.status}
+                  onChange={(e) =>
+                    handleStatusChange(
+                      client,
+                      e.target.value
+                    )
+                  }
+                  className="border rounded p-1"
                 >
-                  <td className="p-3">
-                    {client.id}
-                  </td>
+                  <option value="ACTIVE">
+                    ACTIVE
+                  </option>
 
-                  <td className="p-3">
-                    {client.companyName}
-                  </td>
+                  <option value="INACTIVE">
+                    INACTIVE
+                  </option>
+                </select>
+              </td>
 
-                  <td className="p-3">
-                    {client.contactPerson}
-                  </td>
+              <td className="p-3">
+                <button
+                  onClick={() =>
+                    handleDelete(client.id)
+                  }
+                  className="bg-red-600 text-white px-3 py-1 rounded mr-2"
+                >
+                  Delete
+                </button>
 
-                  <td className="p-3">
-                    {client.email}
-                  </td>
+                <button
+                  onClick={() =>
+                    window.location.href =
+                      `/clients/${client.id}/reports`
+                  }
+                  className="bg-blue-600 text-white px-3 py-1 rounded mr-2"
+                >
+                  View Reports
+                </button>
 
-                  <td className="p-3">
-                    {client.phone}
-                  </td>
+                <button
+                  onClick={() => {
+                    setSelectedClient(client);
+                    setShowResetModal(true);
+                  }}
+                  className="bg-yellow-500 text-white px-3 py-1 rounded"
+                >
+                  Reset Password
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
 
-                  
-                  <td className="p-3">
+    {/* Mobile Cards */}
+    <div className="md:hidden space-y-4 mt-4">
+      {clients.map((client: any) => (
+        <div
+          key={client.id}
+          className="bg-white rounded-xl shadow border p-4"
+        >
+          <div className="space-y-3">
 
-                    <select
-                      value={client.status}
-                      onChange={(e) =>
-                        handleStatusChange(
-                          client,
-                          e.target.value
-                        )
-                      }
-                      className="border rounded p-1">
-                      <option value="ACTIVE">
-                        ACTIVE
-                      </option>
+            <div>
+              <span className="font-semibold">
+                ID:
+              </span>{" "}
+              {client.id}
+            </div>
 
-                      <option value="INACTIVE">
-                        INACTIVE
-                      </option>
+            <div>
+              <span className="font-semibold">
+                Company:
+              </span>{" "}
+              {client.companyName}
+            </div>
 
-                    </select>
+            <div>
+              <span className="font-semibold">
+                Contact Person:
+              </span>{" "}
+              {client.contactPerson}
+            </div>
 
-                    </td>
+            <div className="break-all">
+              <span className="font-semibold">
+                Email:
+              </span>{" "}
+              {client.email}
+            </div>
 
-                  <td className="p-3">
-                                          
-                        <button
-                          onClick={() =>
-                            handleDelete(client.id)
-                          }
-                          className="
-                          bg-red-600
-                          text-white
-                          px-3
-                          py-1
-                          rounded
-                          mr-2">
-                        Delete
-                        </button>
+            <div>
+              <span className="font-semibold">
+                Phone:
+              </span>{" "}
+              {client.phone}
+            </div>
 
-                      <button
-                        onClick={() =>
-                          window.location.href =
-                            `/clients/${client.id}/reports`
-                        }
-                        className="
-                        bg-blue-600
-                        text-white
-                        px-3
-                        py-1
-                        rounded
-                        mr-2">
-                      View Reports
-                      </button>
+            <div>
+              <span className="font-semibold">
+                Status
+              </span>
 
-                          <button
-                            onClick={() => {
+              <select
+                value={client.status}
+                onChange={(e) =>
+                  handleStatusChange(
+                    client,
+                    e.target.value
+                  )
+                }
+                className="w-full border rounded p-2 mt-2"
+              >
+                <option value="ACTIVE">
+                  ACTIVE
+                </option>
 
-                              setSelectedClient(
-                                client
-                              );
+                <option value="INACTIVE">
+                  INACTIVE
+                </option>
+              </select>
+            </div>
 
-                              setShowResetModal(
-                                true
-                              );
+            <div className="grid gap-2 pt-2">
 
-                            }}
-                            className="
-                            bg-yellow-500
-                            text-white
-                            px-3
-                            py-1
-                            rounded">
-                            Reset Password
-                          </button>
-                              
-                </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+              <button
+                onClick={() =>
+                  handleDelete(client.id)
+                }
+                className="bg-red-600 text-white py-2 rounded"
+              >
+                Delete
+              </button>
+
+              <button
+                onClick={() =>
+                  window.location.href =
+                    `/clients/${client.id}/reports`
+                }
+                className="bg-blue-600 text-white py-2 rounded"
+              >
+                View Reports
+              </button>
+
+              <button
+                onClick={() => {
+                  setSelectedClient(client);
+                  setShowResetModal(true);
+                }}
+                className="bg-yellow-500 text-white py-2 rounded"
+              >
+                Reset Password
+              </button>
+
+            </div>
+
+          </div>
         </div>
-      )}
-
+      ))}
+    </div>
+  </>
+)}
       
       {showResetModal && (
 
