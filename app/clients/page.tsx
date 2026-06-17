@@ -6,15 +6,25 @@ import {
   getClients,
   createClient,
   deleteClient,
+  updateClient
 } from "@/services/clientService";
+
 import {
   registerUser,
 } from "@/services/authService";
+
+import {
+  resetPassword,
+} from "@/services/userService";
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showForm, setShowForm] = useState(false);
+
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<any>(null);
+  const [newPassword, setNewPassword] = useState("");
 
   const [formData, setFormData] = useState({
     companyName: "",
@@ -104,6 +114,69 @@ export default function ClientsPage() {
 
     alert("Failed to delete client");
   }
+};
+
+
+const handleResetPassword =
+async () => {
+
+  try {
+
+    await resetPassword(
+      selectedClient.userId,
+      newPassword
+    );
+
+    alert(
+      "Password reset successfully"
+    );
+
+    setShowResetModal(
+      false
+    );
+
+    setNewPassword("");
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Failed to reset password"
+    );
+
+  }
+
+};
+
+
+const handleStatusChange = async (
+  client: any,
+  status: string
+) => {
+
+  try {
+
+    await updateClient(
+      client.id,
+      {
+        ...client,
+        status
+      }
+    );
+
+    loadClients();
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Failed to update status"
+    );
+
+  }
+
 };
 
   useEffect(() => {
@@ -279,28 +352,82 @@ export default function ClientsPage() {
                     {client.phone}
                   </td>
 
+                  
                   <td className="p-3">
-                    {client.status}
-                  </td>
+
+                    <select
+                      value={client.status}
+                      onChange={(e) =>
+                        handleStatusChange(
+                          client,
+                          e.target.value
+                        )
+                      }
+                      className="border rounded p-1">
+                      <option value="ACTIVE">
+                        ACTIVE
+                      </option>
+
+                      <option value="INACTIVE">
+                        INACTIVE
+                      </option>
+
+                    </select>
+
+                    </td>
 
                   <td className="p-3">
-                  <button
-                    onClick={() =>
-                      handleDelete(client.id)
-                    }
-                    className="bg-red-600 text-white px-3 py-1 rounded">
-                    Delete
-                  </button>
-                  
-                  <button
-                    onClick={() =>
-                      window.location.href =
-                        `/clients/${client.id}/reports`
-                    }
-                    className="bg-blue-600 text-white px-3 py-1 rounded mr-2">
-                    View Reports
-                  </button>
-     
+                                          
+                        <button
+                          onClick={() =>
+                            handleDelete(client.id)
+                          }
+                          className="
+                          bg-red-600
+                          text-white
+                          px-3
+                          py-1
+                          rounded
+                          mr-2">
+                        Delete
+                        </button>
+
+                      <button
+                        onClick={() =>
+                          window.location.href =
+                            `/clients/${client.id}/reports`
+                        }
+                        className="
+                        bg-blue-600
+                        text-white
+                        px-3
+                        py-1
+                        rounded
+                        mr-2">
+                      View Reports
+                      </button>
+
+                          <button
+                            onClick={() => {
+
+                              setSelectedClient(
+                                client
+                              );
+
+                              setShowResetModal(
+                                true
+                              );
+
+                            }}
+                            className="
+                            bg-yellow-500
+                            text-white
+                            px-3
+                            py-1
+                            rounded">
+                            Reset Password
+                          </button>
+                              
                 </td>
                 </tr>
               ))}
@@ -308,6 +435,101 @@ export default function ClientsPage() {
           </table>
         </div>
       )}
+
+      
+      {showResetModal && (
+
+<div className="
+fixed inset-0
+bg-black bg-opacity-50
+flex justify-center
+items-center
+z-50
+">
+
+  <div className="
+  bg-white
+  p-6
+  rounded-lg
+  w-96
+  ">
+
+    <h2 className="
+    text-xl
+    font-bold
+    mb-4
+    ">
+      Reset Password
+    </h2>
+
+    <p className="mb-3">
+      {selectedClient?.companyName}
+    </p>
+
+    <input
+      type="password"
+      placeholder="New Password"
+      value={newPassword}
+      onChange={(e) =>
+        setNewPassword(
+          e.target.value
+        )
+      }
+      className="
+      border
+      p-2
+      rounded
+      w-full
+      mb-4
+      "
+    />
+
+    <div className="
+    flex
+    justify-end
+    gap-2
+    ">
+
+      <button
+        onClick={() =>
+          setShowResetModal(
+            false
+          )
+        }
+        className="
+        bg-gray-500
+        text-white
+        px-4
+        py-2
+        rounded
+        "
+      >
+        Cancel
+      </button>
+
+      <button
+        onClick={
+          handleResetPassword
+        }
+        className="
+        bg-green-600
+        text-white
+        px-4
+        py-2
+        rounded
+        "
+      >
+        Save
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+)}
+
     </DashboardLayout>
   );
 }

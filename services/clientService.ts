@@ -132,3 +132,38 @@ export async function getClientByUserId(
 
   return response.json();
 }
+
+
+export async function updateClientProfile(
+  id: number,
+  clientData: any
+) {
+
+  const token =
+    localStorage.getItem("token");
+
+  const response =
+    await fetch(
+      `${API_BASE_URL}/api/clients/profile/${id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type":
+            "application/json",
+          Authorization:
+            `Bearer ${token}`,
+        },
+        body: JSON.stringify(clientData),
+      }
+    );
+
+  if (!response.ok) {
+
+    throw new Error(
+      "Failed to update profile"
+    );
+
+  }
+
+  return response.json();
+}
