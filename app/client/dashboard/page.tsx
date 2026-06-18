@@ -28,11 +28,13 @@ export default function ClientDashboardPage() {
         setClient(clientData);
 
         const reportData =
-          await getReportsByClientId(
-            clientData.id
-          );
+            await getReportsByClientId(
+              clientData.id
+            );
 
-        setReports(reportData);
+          console.log(reportData);
+
+          setReports(reportData.content || []);
       } catch (error) {
         console.error(error);
       }
@@ -41,19 +43,24 @@ export default function ClientDashboardPage() {
     loadData();
   }, []);
 
-  const totalReports = reports.length;
+  
+  const reportList = Array.isArray(reports)
+  ? reports
+  : [];
 
-  const normalReports = reports.filter(
-    (r) => r.status === "NORMAL"
-  ).length;
+const totalReports = reportList.length;
 
-  const observationReports = reports.filter(
-    (r) => r.status === "OBSERVATION"
-  ).length;
+const normalReports = reportList.filter(
+  (r) => r.status === "NORMAL"
+).length;
 
-  const incidentReports = reports.filter(
-    (r) => r.status === "INCIDENT"
-  ).length;
+const observationReports = reportList.filter(
+  (r) => r.status === "OBSERVATION"
+).length;
+
+const incidentReports = reportList.filter(
+  (r) => r.status === "INCIDENT"
+).length;
 
   return (
     <ClientLayout>
@@ -162,7 +169,7 @@ export default function ClientDashboardPage() {
   {/* Mobile View */}
   <div className="block md:hidden space-y-4">
 
-    {reports.slice(0, 5).map((report: any) => (
+    {reportList.slice(0, 5).map((report: any) => (
       <div
         key={report.id}
         className="border rounded-xl p-4 shadow-sm bg-slate-50"
