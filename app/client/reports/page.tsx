@@ -35,24 +35,28 @@ export default function ClientReportsPage() {
 
   try {
 
-    if (!date) {
+   if (!date) {
 
-      if (client) {
+  if (client) {
 
-       const reportData =
-          await getReportsByClientId(
-            clientData.id
-          );
+    const reportData =
+      await getReportsByClientId(
+        client.id
+      );
 
-        console.log(reportData);
+    console.log(reportData);
 
-        setReports(reportData.content || []);
+    setReports(
+      Array.isArray(reportData)
+        ? reportData
+        : reportData?.content || []
+    );
 
-      }
+  }
 
-      return;
+  return;
 
-    }
+}
 
     const formattedDate =
       date
@@ -131,23 +135,100 @@ export default function ClientReportsPage() {
         My Reports
       </h1>
 
-      <div className="bg-white p-6 rounded-xl shadow mb-6">
+      {/* Client Information Card */}
+<div
+  className="
+    bg-white
+    rounded-3xl
+    border-2 border-blue-100
+    shadow-[0_12px_35px_rgba(59,130,246,0.08)]
+    overflow-hidden
+    mb-6
+  "
+>
+  {/* Header */}
+  <div
+    className="
+      bg-gradient-to-r
+      from-white
+      via-slate-50
+      to-white
+      px-6
+      py-5
+      border-b-2
+      border-blue-100
+    "
+  >
+    <h2 className="text-slate-800 text-2xl font-bold">
+      Client Information
+    </h2>
 
-        <p>
-          <strong>
-            Company:
-          </strong>{" "}
-          {client?.companyName}
+    <p className="text-slate-500 text-sm mt-1">
+      Company Profile
+    </p>
+  </div>
+
+  {/* Content */}
+  <div className="p-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+      {/* Company Card */}
+      <div
+        className="
+          relative
+          bg-white
+          border-2
+          border-blue-100
+          rounded-2xl
+          p-5
+          shadow-[0_4px_15px_rgba(59,130,246,0.08)]
+          hover:shadow-[0_12px_30px_rgba(59,130,246,0.15)]
+          hover:-translate-y-1
+          transition-all
+          duration-300
+        "
+      >
+        <div className="absolute top-0 left-0 h-full w-1.5 bg-blue-500 rounded-l-2xl"></div>
+
+        <p className="text-xs uppercase font-bold tracking-wider text-blue-600">
+          Company
         </p>
 
-        <p>
-          <strong>
-            Contact:
-          </strong>{" "}
-          {client?.contactPerson}
-        </p>
-
+        <h3 className="text-2xl font-bold text-slate-900 mt-3 break-words">
+          {client?.companyName || "-"}
+        </h3>
       </div>
+
+      {/* Contact Person Card */}
+      <div
+        className="
+          relative
+          bg-white
+          border-2
+          border-emerald-100
+          rounded-2xl
+          p-5
+          shadow-[0_4px_15px_rgba(16,185,129,0.08)]
+          hover:shadow-[0_12px_30px_rgba(16,185,129,0.15)]
+          hover:-translate-y-1
+          transition-all
+          duration-300
+        "
+      >
+        <div className="absolute top-0 left-0 h-full w-1.5 bg-emerald-500 rounded-l-2xl"></div>
+
+        <p className="text-xs uppercase font-bold tracking-wider text-emerald-600">
+          Contact Person
+        </p>
+
+        <h3 className="text-2xl font-bold text-slate-900 mt-3 break-words">
+          {client?.contactPerson || "-"}
+        </h3>
+      </div>
+
+    </div>
+  </div>
+</div>
 
 <div className="bg-white p-4 rounded-xl shadow mb-4 flex flex-col sm:flex-row sm:items-center gap-3">
   <label className="font-medium">
