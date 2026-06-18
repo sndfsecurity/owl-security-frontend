@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 
 export default function ClientLayout({
@@ -8,8 +9,7 @@ export default function ClientLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [sidebarOpen, setSidebarOpen] =
-    useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -17,43 +17,58 @@ export default function ClientLayout({
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-slate-100">
 
       {/* HEADER */}
-      <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b-2 border-red-500 shadow-sm z-50">
+      <header className="fixed top-0 left-0 right-0 h-20 bg-white border-b-2 border-red-500 shadow-md z-50">
+        <div className="h-full px-4 md:px-8 flex items-center justify-between">
 
-        <div className="h-full px-4 md:px-6 flex items-center justify-between">
-
+          {/* Left Section */}
           <div className="flex items-center gap-3">
 
+            {/* Mobile Menu Button */}
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden text-2xl font-bold"
+              className="lg:hidden text-3xl text-slate-800"
             >
               ☰
             </button>
 
-            <h1 className="font-bold text-2xl md:text-3xl">
+            {/* Logo */}
+            <div className="relative w-10 h-20 md:w-12 md:h-12 flex-shrink-0">
+              <Image
+                src="/LOGO.png"
+                alt="OWL Security"
+                fill
+                priority
+                className="object-contain"
+              />
+            </div>
+
+            {/* Title */}
+            <h1 className="font-bold text-xl sm:text-2xl md:text-3xl text-slate-900">
               Owl Security Portal
             </h1>
 
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Right Section */}
+          <div className="flex items-center gap-3">
 
-            <div className="w-8 h-8 rounded-full bg-blue-800 text-white flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-full bg-blue-700 text-white flex items-center justify-center font-bold text-lg">
               C
             </div>
 
-            <span>Client</span>
+            <span className="hidden sm:block text-lg font-medium text-slate-700">
+              Client
+            </span>
 
           </div>
 
         </div>
-
       </header>
 
-      {/* MOBILE OVERLAY */}
+      {/* Mobile Overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -64,13 +79,13 @@ export default function ClientLayout({
       {/* SIDEBAR */}
       <aside
         className={`
-          fixed left-0 top-16
-          h-[calc(100vh-64px)]
+          fixed left-0 top-20
+          h-[calc(100vh-80px)]
           w-64
-          bg-[#07143a]
+          bg-[#061540]
           text-white
-          z-40
-          transform transition-transform duration-300
+          z-50
+          transform transition-transform duration-300 ease-in-out
           ${
             sidebarOpen
               ? "translate-x-0"
@@ -80,32 +95,32 @@ export default function ClientLayout({
         `}
       >
 
-        <nav className="mt-4 flex flex-col">
+        <nav className="flex flex-col pt-4">
 
           <Link
             href="/client/dashboard"
-            className="px-6 py-4 hover:bg-blue-900 transition"
+            className="px-6 py-4 hover:bg-blue-900 transition font-medium"
           >
             Dashboard
           </Link>
 
           <Link
             href="/client/reports"
-            className="px-6 py-4 hover:bg-blue-900 transition"
+            className="px-6 py-4 hover:bg-blue-900 transition font-medium"
           >
             My Reports
           </Link>
 
           <Link
             href="/client/profile"
-            className="px-6 py-4 hover:bg-blue-900 transition"
+            className="px-6 py-4 hover:bg-blue-900 transition font-medium"
           >
             My Profile
           </Link>
 
           <button
             onClick={handleLogout}
-            className="text-left px-6 py-4 hover:bg-red-700 transition"
+            className="text-left px-6 py-4 hover:bg-red-700 transition font-medium"
           >
             Logout
           </button>
@@ -115,7 +130,7 @@ export default function ClientLayout({
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="pt-20 lg:ml-64 p-4 md:p-6">
+      <main className="pt-24 lg:ml-64 p-4 md:p-6">
         {children}
       </main>
 
