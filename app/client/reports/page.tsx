@@ -194,7 +194,7 @@ export default function ClientReportsPage() {
 
 <tr className="bg-red-900 text-white">
         <th className="p-3 text-left">
-          Date
+          Date  
         </th>
 
         <th className="p-3 text-left">
