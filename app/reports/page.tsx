@@ -47,17 +47,16 @@ export default function ReportsPage() {
       await getClients();
 
     setReports(
-      reportsData.content
-    );
+  reportsData?.content || []
+);
 
-    setTotalPages(
-      reportsData.totalPages
-    );
+setTotalPages(
+  reportsData?.totalPages || 0
+);
 
-    setClients(
-      clientsData
-    );
-
+setClients(
+  clientsData || []
+);
   } catch (error) {
 
     console.error(error);
@@ -115,14 +114,13 @@ useEffect(() => {
       setIsFilterMode(true);
 
       setPage(0);
+setReports(
+  data?.content || []
+);
 
-      setReports(
-        data.content
-      );
-
-      setTotalPages(
-        data.totalPages
-      );
+setTotalPages(
+  data?.totalPages || 0
+);
 
       return;
 
@@ -175,7 +173,7 @@ const handleReset = async () => {
               All Clients
             </option>
 
-            {clients.map((client) => (
+{(clients || []).map((client) => (
               <option
                 key={client.id}
                 value={client.id}
@@ -223,7 +221,7 @@ const handleReset = async () => {
 
 {/* Mobile Cards */}
 <div className="grid gap-3 md:hidden">
-  {reports.map((report: any) => (
+  {(reports || []).map((report: any) => (
     <div
       key={report.id}
       className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden"
@@ -388,7 +386,7 @@ const handleReset = async () => {
     </thead>
 
     <tbody>
-      {reports.map((report: any) => (
+      {(reports || []).map((report: any) => (
         <tr
           key={report.id}
           className="border-b hover:bg-gray-50">

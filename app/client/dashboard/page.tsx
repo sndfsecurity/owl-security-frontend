@@ -127,37 +127,115 @@ const incidentReports = reportList.filter(
       </div>
 
       {/* Client Information */}
-      <div className="bg-white p-6 rounded-xl shadow border border-slate-200">
+<div className="bg-white rounded-3xl shadow-lg border border-slate-200 p-6 mb-6">
 
-        <h2 className="text-xl font-bold mb-4 text-slate-800">
-          Client Information
-        </h2>
+  <div className="mb-6">
+    <h2 className="text-2xl font-bold text-slate-800">
+      Client Information
+    </h2>
 
-        <div className="space-y-3">
+    <p className="text-slate-500 mt-1">
+      Company & Contact Details
+    </p>
+  </div>
 
-          <p>
-            <strong>Company:</strong>{" "}
-            {client?.companyName}
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+    {/* Company */}
+    <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl p-5 border border-blue-200 hover:shadow-lg transition-all duration-300">
+
+      <div className="flex items-center gap-4">
+
+        <div className="w-14 h-14 rounded-2xl bg-blue-200 text-white flex items-center justify-center text-2xl">
+          🏢
+        </div>
+
+        <div>
+          <p className="text-sm text-slate-500">
+            Company Name
           </p>
 
-          <p>
-            <strong>Contact:</strong>{" "}
-            {client?.contactPerson}
+          <p className="text-xl font-bold text-slate-800">
+            {client?.companyName || "-"}
           </p>
-
-          <p>
-            <strong>Email:</strong>{" "}
-            {client?.email}
-          </p>
-
-          <p>
-            <strong>Phone:</strong>{" "}
-            {client?.phone}
-          </p>
-
         </div>
 
       </div>
+
+    </div>
+
+    {/* Contact */}
+    <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-2xl p-5 border border-green-200 hover:shadow-lg transition-all duration-300">
+
+      <div className="flex items-center gap-4">
+
+        <div className="w-14 h-14 rounded-2xl bg-green-200 text-white flex items-center justify-center text-2xl">
+          👤
+        </div>
+
+        <div>
+          <p className="text-sm text-slate-500">
+            Company Owner Name
+          </p>
+
+          <p className="text-xl font-bold text-slate-800">
+            {client?.contactPerson || "-"}
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+
+    {/* Email */}
+    <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-2xl p-5 border border-purple-200 hover:shadow-lg transition-all duration-300">
+
+      <div className="flex items-center gap-4">
+
+        <div className="w-14 h-14 rounded-2xl bg-purple-200 text-white flex items-center justify-center text-2xl">
+          📧
+        </div>
+
+        <div className="min-w-0">
+          <p className="text-sm text-slate-500">
+            Email Address
+          </p>
+
+          <p className="text-base font-semibold text-slate-800 break-all">
+            {client?.email || "-"}
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+
+    {/* Phone */}
+    <div className="bg-gradient-to-r from-red-50 to-red-100 rounded-2xl p-5 border border-red-200 hover:shadow-lg transition-all duration-300">
+
+      <div className="flex items-center gap-4">
+
+        <div className="w-14 h-14 rounded-2xl bg-red-200 text-white flex items-center justify-center text-2xl">
+          📞
+        </div>
+
+        <div>
+          <p className="text-sm text-slate-500">
+            Phone Number
+          </p>
+
+          <p className="text-xl font-bold text-slate-800">
+            {client?.phone || "-"}
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
 
       {/* Recent Reports */}
 <div className="bg-white p-6 rounded-xl shadow mt-6 border border-slate-200">
