@@ -39,12 +39,14 @@ export default function ClientReportsPage() {
 
       if (client) {
 
-        const reportData =
+       const reportData =
           await getReportsByClientId(
-            client.id
+            clientData.id
           );
 
-        setReports(reportData);
+        console.log(reportData);
+
+        setReports(reportData.content || []);
 
       }
 
@@ -64,7 +66,9 @@ export default function ClientReportsPage() {
         formattedDate
       );
 
-    setReports(reportData);
+      
+
+    setReports(reportData.content || []);
 
   } catch (error) {
 
@@ -99,7 +103,10 @@ export default function ClientReportsPage() {
             clientData.id
           );
 
-        setReports(reportData);
+        console.log("CLIENT ID:", clientData.id);
+        console.log("REPORT DATA:", reportData);
+
+        setReports(reportData.content || []);
 
       } catch (error) {
 
@@ -112,6 +119,10 @@ export default function ClientReportsPage() {
     loadData();
 
   }, []);
+
+  const reportList = Array.isArray(reports)
+  ? reports
+  : [];
 
   return (
      <ClientLayout>
@@ -159,12 +170,12 @@ export default function ClientReportsPage() {
 
       setSelectedDate("");
 
-      const reportData =
+            const reportData =
         await getReportsByClientId(
           client.id
         );
 
-      setReports(reportData);
+      setReports(reportData.content || []);
 
     }}
     className="bg-gray-500 text-white px-4 py-2 rounded"
@@ -212,7 +223,7 @@ export default function ClientReportsPage() {
 
     <tbody>
 
-      {reports.map((report: any) => (
+      {reportList.map((report:any) =>( 
 
         <tr
           key={report.id}
@@ -273,7 +284,7 @@ export default function ClientReportsPage() {
 {/* Mobile Cards */}
 <div className="md:hidden space-y-5">
 
-  {reports.map((report: any) => (
+  {reportList.map((report: any) => (
 
     <div
       key={report.id}
