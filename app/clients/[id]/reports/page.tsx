@@ -32,9 +32,15 @@ export default function ClientReportsPage() {
   const [totalPages, setTotalPages] = useState(0);
 
   const [selectedImage, setSelectedImage] =
-  useState<File | null>(null);
+    useState<File | null>(null);
+
+    const [selectedVideo, setSelectedVideo] =
+    useState<File | null>(null);
 
   const [selectedViewImage, setSelectedViewImage] =
+  useState<string | null>(null);
+
+  const [selectedViewVideo, setSelectedViewVideo] =
   useState<string | null>(null);
 
   const [selectedNotes, setSelectedNotes] =
@@ -93,18 +99,27 @@ export default function ClientReportsPage() {
 
   try {
 
-    let imagePath = "";
+       let imagePath = "";
+        let videoPath = "";
 
-    if (selectedImage) {
+        if (selectedImage) {
 
-      imagePath =
-        await uploadImage(
-          selectedImage
-        );
+          imagePath =
+            await uploadImage(
+              selectedImage
+            );
 
-    }
+        }
+        if (selectedVideo) {
 
-    await createReport({
+          videoPath =
+            await uploadImage(
+              selectedVideo
+            );
+
+        }
+
+   await createReport({
 
       clientId: clientId,
 
@@ -118,7 +133,9 @@ export default function ClientReportsPage() {
 
       notes: reportData.notes,
 
-       imageUrl: imagePath,
+      imageUrl: imagePath,
+
+      videoUrl: videoPath,
 
     });
 
@@ -127,6 +144,8 @@ export default function ClientReportsPage() {
     );
 
     setSelectedImage(null);
+
+    setSelectedVideo(null);
 
     setReportData({
       reportDate: "",
@@ -295,29 +314,63 @@ useEffect(() => {
 
           </div>
 
-          <div className="mt-4">
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
 
-              <label className="font-medium block mb-2">
-                Report Image:
-              </label>
+  {/* Image Upload */}
+  <div>
+    <label className="block font-semibold text-slate-700 mb-2">
+      📷 Report Image
+    </label>
 
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) =>
-                  setSelectedImage(
-                    e.target.files?.[0] || null
-                  )
-                }
-                className="border p-2 rounded w-full"
-              />
+    <input
+      type="file"
+      accept="image/*"
+      onChange={(e) =>
+        setSelectedImage(
+          e.target.files?.[0] || null
+        )
+      }
+      className="
+        w-full
+        border
+        border-slate-300
+        rounded-xl
+        p-3
+        bg-white
+      "
+    />
+  </div>
 
-          </div>
+  {/* Video Upload */}
+  <div>
+    <label className="block font-semibold text-slate-700 mb-2">
+      🎥 Report Video
+    </label>
+
+    <input
+      type="file"
+      accept="video/*"
+      onChange={(e) =>
+        setSelectedVideo(
+          e.target.files?.[0] || null
+        )
+      }
+      className="
+        w-full
+        border
+        border-slate-300
+        rounded-xl
+        p-3
+        bg-white
+      "
+    />
+  </div>
+
+</div>
 
           <button
             onClick={handleSubmit}
-            className="mt-4 bg-green-600 text-white px-4 py-2 rounded"
-          >
+            className="mt-4 bg-green-600 text-white px-4 py-2 rounded">
             Save Report
           </button>
         </div>
@@ -369,7 +422,7 @@ useEffect(() => {
               </th>
 
               <th className="p-3 text-left">
-                Image
+              Attachment
               </th>
 
               <th className="p-3 text-left">
@@ -450,28 +503,46 @@ useEffect(() => {
                   </td>
 
                    
-                   <td className="p-3">
+                   <td className="p-3 space-x-2">
 
-                      {report.imageUrl ? (
+                      {report.imageUrl && (
 
-                        <button
-                          onClick={() =>
-                            setSelectedViewImage(
-                              report.imageUrl
-                            )
-                          }
-                          className="bg-blue-600 text-white px-3 py-1 rounded"
-                        >
-                          View
-                        </button>
-
-                      ) : (
-
-                        <span>No Image</span>
+                      <button
+                      onClick={() =>
+                      setSelectedViewImage(
+                      report.imageUrl
+                      )
+                      }
+                      className="bg-blue-600 text-white px-3 py-1 rounded"
+                      >
+                      View Image
+                      </button>
 
                       )}
 
-                    </td>
+                      {report.videoUrl && (
+
+                      <button
+                      onClick={() =>
+                      setSelectedViewVideo(
+                      report.videoUrl
+                      )
+                      }
+                      className="bg-purple-600 text-white px-3 py-1 rounded"
+                      >
+                      Play Video
+                      </button>
+
+                      )}
+
+                      {!report.imageUrl &&
+                      !report.videoUrl && (
+
+                      <span>No Attachment</span>
+
+                      )}
+
+                      </td>
 
 
                     <td className="p-3">
@@ -494,6 +565,7 @@ useEffect(() => {
           </tbody>
         </table>
       </div>
+
 <div className="md:hidden space-y-4 mt-6">
 
   <h2 className="text-2xl font-bold text-slate-800">
@@ -586,36 +658,63 @@ useEffect(() => {
       {/* Buttons */}
       <div className="grid grid-cols-2 gap-3 mt-5">
 
-        {report.imageUrl ? (
+        
+        {report.imageUrl && (
+
           <button
-            onClick={() =>
-              setSelectedViewImage(
-                report.imageUrl
-              )
-            }
-            className="
-            bg-blue-600
-            text-white
-            py-3
-            rounded-xl
-            font-semibold
-            "
+          onClick={() =>
+          setSelectedViewImage(
+          report.imageUrl
+          )
+          }
+          className="
+          bg-blue-600
+          text-white
+          py-3
+          rounded-xl
+          font-semibold"
           >
-            View Image
+          View Image
           </button>
-        ) : (
+
+          )}
+
+          {report.videoUrl && (
+
           <button
-            disabled
-            className="
-            bg-slate-200
-            text-slate-500
-            py-3
-            rounded-xl
-            "
+          onClick={() =>
+          setSelectedViewVideo(
+          report.videoUrl
+          )
+          }
+          className="
+          bg-purple-600
+          text-white
+          py-3
+          rounded-xl
+          font-semibold"
           >
-            No Image
+          Play Video
           </button>
-        )}
+
+          )}
+
+          {!report.imageUrl &&
+          !report.videoUrl && (
+
+          <button
+          disabled
+          className="
+          bg-slate-200
+          text-slate-500
+          py-3
+          rounded-xl"
+          >
+          No Attachment
+          </button>
+
+          )}
+
 
         <button
           onClick={() =>
@@ -719,6 +818,41 @@ useEffect(() => {
         alt="Report"
         className="max-w-full max-h-[65vh] rounded"
       />
+
+    </div>
+
+  </div>
+
+)}
+
+
+{selectedViewVideo && (
+
+  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+
+    <div className="bg-white p-4 rounded-lg max-w-4xl max-h-[90vh] overflow-auto mt-25">
+
+      <div className="flex justify-end mb-3">
+
+        <button
+          onClick={() =>
+            setSelectedViewVideo(null)
+          }
+          className="bg-red-600 text-white px-3 py-1 rounded"
+        >
+          Close
+        </button>
+
+      </div>
+
+      <video
+        controls
+        className="max-w-full max-h-[65vh] rounded"
+      >
+        <source
+          src={`http://localhost:8080/uploads/${selectedViewVideo}`}
+        />
+      </video>
 
     </div>
 
