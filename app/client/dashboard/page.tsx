@@ -5,6 +5,7 @@ import ClientLayout from "@/components/layout/ClientLayout";
 import { getClientByUserId } from "@/services/clientService";
 import { getReportsByClientId } from "@/services/reportService";
 
+import Link from "next/link";
 export default function ClientDashboardPage() {
   const [name, setName] = useState("");
   const [client, setClient] = useState<any>(null);
@@ -237,12 +238,22 @@ const incidentReports = reportList.filter(
 
 </div>
 
-      {/* Recent Reports */}
-<div className="bg-white p-6 rounded-xl shadow mt-6 border border-slate-200">
+  <div className="bg-white p-6 rounded-xl shadow mt-6 border border-slate-200">
 
-  <h2 className="text-xl font-bold mb-4 text-slate-800">
-    Recent Reports
-  </h2>
+  <div className="flex items-center justify-between mb-4">
+
+    <h2 className="text-2xl font-bold text-slate-800">
+      Recent Reports
+    </h2>
+
+    <Link
+      href="/client/reports"
+      className="inline-flex items-center gap-2 px-5 py-2.5 border-2 border-red-800 text-red-800 bg-white text-sm font-bold rounded-xl shadow-sm hover:bg-red-800 hover:text-white transition-all duration-300"
+    >
+      View All Reports →
+    </Link>
+
+  </div>
 
   {/* Mobile View */}
   <div className="block md:hidden space-y-4">
@@ -253,21 +264,18 @@ const incidentReports = reportList.filter(
         className="border rounded-xl p-4 shadow-sm bg-slate-50"
       >
         <p>
-          <strong>Date:</strong>{" "}
-          {report.reportDate}
+          <strong>Date:</strong> {report.reportDate}
         </p>
 
         <p className="mt-2">
-          <strong>Time:</strong>{" "}
-          {report.reportTime}
+          <strong>Time:</strong> {report.reportTime}
         </p>
 
         <p className="mt-2">
           <strong>Status:</strong>
 
           <span
-            className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold
-            ${
+            className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${
               report.status === "NORMAL"
                 ? "bg-green-100 text-green-700"
                 : report.status === "OBSERVATION"
@@ -280,8 +288,7 @@ const incidentReports = reportList.filter(
         </p>
 
         <p className="mt-2">
-          <strong>Priority:</strong>{" "}
-          {report.priority}
+          <strong>Priority:</strong> {report.priority}
         </p>
       </div>
     ))}
@@ -294,72 +301,45 @@ const incidentReports = reportList.filter(
     <table className="w-full min-w-[700px]">
 
       <thead>
-
         <tr className="bg-red-900 text-white">
-
-          <th className="p-3 text-left">
-            Date
-          </th>
-
-          <th className="p-3 text-left">
-            Time
-          </th>
-
-          <th className="p-3 text-left">
-            Status
-          </th>
-
-          <th className="p-3 text-left">
-            Priority
-          </th>
-
+          <th className="p-3 text-left">Date</th>
+          <th className="p-3 text-left">Time</th>
+          <th className="p-3 text-left">Status</th>
+          <th className="p-3 text-left">Priority</th>
         </tr>
-
       </thead>
 
       <tbody>
 
-        {reports
-          .slice(0, 5)
-          .map((report: any) => (
+        {reportList.slice(0, 5).map((report: any) => (
 
-            <tr
-              key={report.id}
-              className="border-b hover:bg-slate-50 transition"
-            >
+          <tr
+            key={report.id}
+            className="border-b hover:bg-slate-50 transition"
+          >
+            <td className="p-3">{report.reportDate}</td>
 
-              <td className="p-3">
-                {report.reportDate}
-              </td>
+            <td className="p-3">{report.reportTime}</td>
 
-              <td className="p-3">
-                {report.reportTime}
-              </td>
+            <td className="p-3">
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                  report.status === "NORMAL"
+                    ? "bg-green-100 text-green-700"
+                    : report.status === "OBSERVATION"
+                    ? "bg-yellow-100 text-yellow-700"
+                    : "bg-red-100 text-red-700"
+                }`}
+              >
+                {report.status}
+              </span>
+            </td>
 
-              <td className="p-3">
+            <td className="p-3">{report.priority}</td>
 
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-semibold
-                  ${
-                    report.status === "NORMAL"
-                      ? "bg-green-100 text-green-700"
-                      : report.status === "OBSERVATION"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : "bg-red-100 text-red-700"
-                  }`}
-                >
-                  {report.status}
-                </span>
+          </tr>
 
-              </td>
-
-              <td className="p-3">
-                {report.priority}
-              </td>
-
-            </tr>
-
-          ))}
+        ))}
 
       </tbody>
 
@@ -369,5 +349,6 @@ const incidentReports = reportList.filter(
 
 </div>
     </ClientLayout>
+    
   );
 }

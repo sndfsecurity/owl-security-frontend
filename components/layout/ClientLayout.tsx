@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function ClientLayout({
   children,
@@ -10,6 +10,37 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const [currentTime, setCurrentTime] = useState("");
+  const [currentDate, setCurrentDate] = useState("");
+
+  useEffect(() => {
+    const updateDateTime = () => {
+      const now = new Date();
+
+      setCurrentDate(
+        now.toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        })
+      );
+
+      setCurrentTime(
+        now.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })
+      );
+    };
+
+    updateDateTime();
+
+    const interval = setInterval(updateDateTime, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -51,6 +82,35 @@ export default function ClientLayout({
             </h1>
 
           </div>
+
+          {/* Live Date & Time */}
+<div
+  className="
+    hidden lg:flex
+    items-center
+    px-6
+    py-3
+    bg-white
+    rounded-2xl
+    border
+    border-slate-200
+    shadow-lg
+  "
+>
+
+  <span className="text-slate-700 font-bold text-xl">
+    {currentDate}
+  </span>
+
+  <span className="mx-3 text-slate-400 font-bold">
+    |
+  </span>
+
+  <span className="text-slate-800 font-bold text-xl">
+    {currentTime}
+  </span>
+
+</div>
 
           {/* Right Section */}
           <div className="flex items-center gap-3">

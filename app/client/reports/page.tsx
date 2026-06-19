@@ -26,6 +26,8 @@ export default function ClientReportsPage() {
 
   const [selectedDate, setSelectedDate] = useState("");
 
+const [selectedNote, setSelectedNote] =
+  useState<string | null>(null);
 
   const handleDateFilter = async (
   date: string
@@ -307,52 +309,85 @@ export default function ClientReportsPage() {
       {reportList.map((report:any) =>( 
 
         <tr
-          key={report.id}
-          className="border-b hover:bg-slate-50"
-        >
+  key={report.id}
+  className="border-b hover:bg-slate-50"
+>
 
-          <td className="p-3">
-            {report.reportDate}
-          </td>
+  <td className="p-3">
+    {report.reportDate}
+  </td>
 
-          <td className="p-3">
-            {report.reportTime}
-          </td>
+  <td className="p-3">
+    {report.reportTime}
+  </td>
 
-          <td className="p-3">
-            {report.status}
-          </td>
+  <td className="p-3">
+    {report.status}
+  </td>
 
-          <td className="p-3">
-            {report.priority}
-          </td>
+  <td className="p-3">
+    {report.priority}
+  </td>
 
-          <td className="p-3">
-            {report.notes}
-          </td>
+  <td className="p-3">
 
-          <td className="p-3">
+    {report.notes &&
+     report.notes.length > 80 ? (
+      <>
+        <span>
+          {report.notes.substring(0, 50)}...
+        </span>
 
-            {report.imageUrl ? (
+        <button
+  onClick={() =>
+    setSelectedNote(report.notes)
+  }
+  className="
+    ml-2
+    bg-green-600
+    hover:bg-green-700
+    text-white
+    px-4
+    py-2
+    rounded-lg
+    text-sm
+    font-semibold
+    shadow-md
+    transition-all
+    duration-200
+  "
+>
+  Read More
+</button>
+      </>
+    ) : (
+      report.notes || "No Notes"
+    )}
 
-              <button
-                onClick={() =>
-                  setSelectedImage(
-                    `http://localhost:8080/uploads/${report.imageUrl}`
-                  )
-                }
-                className="bg-blue-600 text-white px-3 py-1 rounded"
-              >
-                View
-              </button>
+  </td>
 
-            ) : (
-              <span>No Image</span>
-            )}
+  <td className="p-3">
 
-          </td>
+    {report.imageUrl ? (
 
-        </tr>
+      <button
+        onClick={() =>
+          setSelectedImage(
+            `http://localhost:8080/uploads/${report.imageUrl}`
+          )
+        }
+        className="bg-blue-600 text-white px-3 py-1 rounded"
+      >
+        View
+      </button>
+
+    ) : (
+      <span>No Image</span>
+    )}
+
+  </td>
+
+</tr>
 
       ))}
 
@@ -361,7 +396,6 @@ export default function ClientReportsPage() {
   </table>
 
 </div>
-
 {/* Mobile Cards */}
 <div className="md:hidden space-y-5">
 
@@ -434,18 +468,55 @@ export default function ClientReportsPage() {
 
         </div>
 
+        {/* Notes Section */}
         <div className="bg-slate-50 rounded-xl p-3 mb-3">
 
           <p className="text-xs text-gray-500 mb-1">
             Notes
           </p>
 
-          <p className="text-sm text-gray-700 break-words">
-            {report.notes || "No Notes"}
-          </p>
+          {report.notes &&
+          report.notes.length > 120 ? (
+
+            <>
+              <p className="text-sm text-gray-700 break-words">
+                {report.notes.substring(0, 120)}...
+              </p>
+
+              <button
+                onClick={() =>
+                  setSelectedNote(report.notes)
+                }
+                className="
+                  mt-3
+                  bg-green-600
+                  hover:bg-green-700
+                  text-white
+                  px-4
+                  py-2
+                  rounded-xl
+                  text-sm
+                  font-semibold
+                  shadow-md
+                  transition-all
+                  duration-200
+                "
+              >
+                Read More
+              </button>
+            </>
+
+          ) : (
+
+            <p className="text-sm text-gray-700 break-words">
+              {report.notes || "No Notes"}
+            </p>
+
+          )}
 
         </div>
 
+        {/* Image */}
         {report.imageUrl ? (
 
           <button
@@ -475,7 +546,6 @@ export default function ClientReportsPage() {
 
 </div>
 
-
 {selectedImage && (
   <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
 
@@ -497,6 +567,37 @@ export default function ClientReportsPage() {
         alt="Report"
         className="max-h-[80vh] max-w-[90vw] rounded-lg"
       />
+
+    </div>
+
+  </div>
+)}
+
+{selectedNote && (
+  <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+
+    <div className="bg-white rounded-xl w-full max-w-2xl p-6">
+
+      <div className="flex justify-between items-center mb-4">
+
+        <h2 className="text-xl font-bold">
+          Report Notes
+        </h2>
+
+        <button
+          onClick={() =>
+            setSelectedNote(null)
+          }
+          className="bg-red-600 text-white px-4 py-2 rounded"
+        >
+          Close
+        </button>
+
+      </div>
+
+      <p className="whitespace-pre-wrap">
+        {selectedNote}
+      </p>
 
     </div>
 
