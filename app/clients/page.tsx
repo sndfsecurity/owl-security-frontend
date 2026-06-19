@@ -186,7 +186,7 @@ const handleStatusChange = async (
   return (
     <DashboardLayout>
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
-        <h1 className="text-3xl font-bold">
+        <h1 className="text-3xl font-bold mt-5 ml-4">
           Clients
         </h1>
 

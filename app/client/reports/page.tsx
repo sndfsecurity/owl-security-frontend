@@ -15,11 +15,13 @@ import {
 
 export default function ClientReportsPage() {
 
-  const [client, setClient] =
-    useState<any>(null);
+  const [client, setClient] = useState<any>(null);
 
-  const [reports, setReports] =
-    useState<any[]>([]);
+  const [reports, setReports] = useState<any[]>([]);
+
+  const [page, setPage] = useState(0);
+
+  const [totalPages, setTotalPages] = useState(0);
 
   const [selectedImage, setSelectedImage] =
   useState<string | null>(null);
@@ -58,14 +60,16 @@ useState<string | null>(null);
         setClient(clientData);
 
         const reportData =
-          await getReportsByClientId(
-            clientData.id
-          );
+            await getReportsByClientId(
+              clientData.id,
+              page,
+              5
+            );
 
-        console.log("CLIENT ID:", clientData.id);
-        console.log("REPORT DATA:", reportData);
+          setReports(reportData.content || []);
 
-        setReports(reportData.content || []);
+          setTotalPages(reportData.totalPages || 0); 
+
 
       } catch (error) {
 
@@ -77,7 +81,7 @@ useState<string | null>(null);
 
     loadData();
 
-  }, []);
+ }, [page]);
 
   const reportList = Array.isArray(reports)
   ? reports
@@ -87,14 +91,13 @@ useState<string | null>(null);
   const handleSearch = async () => {
 
   if (!fromDate || !toDate) {
-
     alert("Please select both dates");
-
     return;
-
   }
 
   try {
+
+    setPage(0);
 
     const data =
       await getReportsByDateRange(
@@ -102,10 +105,12 @@ useState<string | null>(null);
         toDate,
         client.id,
         0,
-        20
+        5
       );
 
     setReports(data.content || []);
+
+    setTotalPages(data.totalPages || 0);
 
   } catch (error) {
 
@@ -121,21 +126,26 @@ const handleClear = async () => {
   setFromDate("");
 
   setToDate("");
-  const reportData =
-    await getReportsByClientId(
-      client.id
-    );
+  
+  setPage(0);
 
-  setReports(
-    reportData.content || []
-  );
+    const reportData =
+      await getReportsByClientId(
+        client.id,
+        0,
+        5
+      );
+
+    setReports(reportData.content || []);
+
+    setTotalPages(reportData.totalPages || 0);
 
 };
 
   return (
      <ClientLayout>
 
-      <h1 className="text-3xl font-bold mb-6">
+      <h1 className="text-3xl font-bold mb-6 mt-5">
         My Reports
       </h1>
 
@@ -344,9 +354,7 @@ const handleClear = async () => {
     font-semibold
     shadow-md
     transition-all
-    duration-200
-  "
->
+    duration-200 ">    
   Read More
 </button>
       </>
@@ -368,8 +376,7 @@ const handleClear = async () => {
             `http://localhost:8080/uploads/${report.imageUrl}`
           )
         }
-        className="bg-blue-600 text-white px-3 py-1 rounded"
-      >
+        className="bg-blue-600 text-white px-3 py-1 rounded">
         View Image
       </button>
 
@@ -576,6 +583,31 @@ const handleClear = async () => {
   ))}
 
 </div>
+
+{/* pagination............. */}
+
+<div className="flex justify-center items-center gap-4 mt-6">
+
+  <button
+    disabled={page === 0}
+    onClick={() => setPage(page - 1)}
+    className="bg-gray-600 text-white px-4 py-2 rounded disabled:opacity-50">
+    Previous
+  </button>
+
+  <span className="font-medium">
+    Page {page + 1} of {totalPages}
+  </span>
+
+  <button
+    disabled={page >= totalPages - 1}
+    onClick={() => setPage(page + 1)}
+    className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50">
+    Next
+  </button>
+
+</div>
+
 
 {selectedImage && (
   <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">

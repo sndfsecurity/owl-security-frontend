@@ -199,7 +199,6 @@ if (!response.ok) {
 
 return response.json();
 
-  return response.json();
 }
 
 export async function getRecentReports() {

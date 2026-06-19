@@ -217,7 +217,7 @@ useEffect(() => {
 
   return (
     <DashboardLayout>
-      <h1 className="text-3xl font-bold mb-6">
+      <h1 className="text-3xl font-bold mb-6 mt-5">
         {client?.companyName} Reports
       </h1>
 
@@ -236,7 +236,7 @@ useEffect(() => {
 
       {showForm && (
         <div className="bg-white p-6 rounded-xl shadow mb-6">
-<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             <label className="font-medium">
               Report Status:
@@ -376,22 +376,7 @@ useEffect(() => {
         </div>
       )}
 
-<div className="bg-white p-4 md:p-6 rounded-xl shadow">
-        <p>
-          <strong>Client ID:</strong>{" "}
-          {clientId}
-        </p>
 
-        <p>
-          <strong>Company:</strong>{" "}
-          {client?.companyName}
-        </p>
-
-        <p>
-          <strong>Contact:</strong>{" "}
-          {client?.contactPerson}
-        </p>
-      </div>
 
 <div className="hidden md:block mt-6 bg-white rounded-xl shadow p-6 overflow-x-auto">
         <h2 className="text-xl font-bold mb-4">

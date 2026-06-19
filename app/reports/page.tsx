@@ -42,7 +42,7 @@ export default function ReportsPage() {
     const reportsData =
       await getReports(
         currentPage,
-        10
+        8
       );
 
     const clientsData =
@@ -152,7 +152,7 @@ const handleReset = async () => {
 
   return (
   <DashboardLayout>
-    <h1 className="text-2xl md:text-3xl font-bold mb-6">
+    <h1 className="text-2xl  md:text-3xl font-bold mb-10 mt-5 ml-5">
       Reports
     </h1>
 
@@ -162,15 +162,14 @@ const handleReset = async () => {
       <div className="bg-white rounded-xl shadow p-4">
 
         {/* Filters */}
-        <div className="flex flex-col md:flex-row gap-3 mb-4">
+        <div className="flex flex-col md:flex-row gap-3 mb-7 mt-5">
 
           <select
             value={selectedClient}
             onChange={(e) =>
               setSelectedClient(e.target.value)
             }
-            className="border p-2 rounded w-full md:w-auto"
-          >
+            className="border p-2 rounded w-full md:w-auto">
             <option value="">
               All Clients
             </option>
