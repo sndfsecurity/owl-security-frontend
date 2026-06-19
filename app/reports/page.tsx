@@ -11,8 +11,10 @@ export default function ReportsPage() {
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-
   const [selectedImage, setSelectedImage] =
+  useState<string | null>(null);
+
+  const [selectedVideo, setSelectedVideo] =
   useState<string | null>(null);
 
   const [selectedNotes, setSelectedNotes] =
@@ -344,22 +346,44 @@ const handleReset = async () => {
         {/* Footer */}
         <div className="flex justify-end border-t pt-3">
 
-          {report.imageUrl ? (
+          
+          {report.imageUrl && (
+
             <button
-              onClick={() =>
-                setSelectedImage(
-                  `http://localhost:8080/uploads/${report.imageUrl}`
-                )
-              }
-              className="text-sm bg-slate-900 text-white px-4 py-2 rounded-lg"
+            onClick={() =>
+            setSelectedImage(
+            `http://localhost:8080/uploads/${report.imageUrl}`
+            )
+            }
+            className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg"
             >
-              View Image
+            View Image
             </button>
-          ) : (
+
+            )}
+
+            {report.videoUrl && (
+
+            <button
+            onClick={() =>
+            setSelectedVideo(
+            `http://localhost:8080/uploads/${report.videoUrl}`
+            )
+            }
+            className="text-sm bg-purple-600 text-white px-4 py-2 rounded-lg"
+            >
+            Play Video
+            </button>
+
+            )}
+
+            {!report.imageUrl && !report.videoUrl && (
+
             <span className="text-gray-400 text-sm">
-              No Image
+            No Attachment
             </span>
-          )}
+
+            )}
 
         </div>
 
@@ -381,7 +405,7 @@ const handleReset = async () => {
         <th className="p-3 text-left">Status</th>
         <th className="p-3 text-left">Priority</th>
         <th className="p-3 text-left">Notes</th>
-        <th className="p-3 text-left">Image</th>
+        <th className="p-3 text-left">Attachment</th>
       </tr>
     </thead>
 
@@ -438,22 +462,51 @@ const handleReset = async () => {
   )}
 
 </td>
-          <td className="p-3">
-            {report.imageUrl ? (
-              <button
-                onClick={() =>
-                  setSelectedImage(
-                    `http://localhost:8080/uploads/${report.imageUrl}`
-                  )
-                }
-                className="bg-blue-600 text-white px-3 py-1 rounded"
-              >
-                View
-              </button>
-            ) : (
-              <span>No Image</span>
+         
+         <td className="p-3">
+
+            <div className="flex gap-2">
+
+            {report.imageUrl && (
+
+            <button
+            onClick={() =>
+            setSelectedImage(
+            `http://localhost:8080/uploads/${report.imageUrl}`
+            )
+            }
+            className="bg-blue-600 text-white px-3 py-1 rounded">
+            View Image
+            </button>
+
             )}
-          </td>
+
+            {report.videoUrl && (
+
+            <button
+            onClick={() =>
+            setSelectedVideo(
+            `http://localhost:8080/uploads/${report.videoUrl}`
+            )
+            }
+            className="bg-purple-600 text-white px-3 py-1 rounded"
+            >
+            Play Video
+            </button>
+
+            )}
+
+            {!report.imageUrl && !report.videoUrl && (
+
+            <span>No Attachment</span>
+
+            )}
+
+            </div>
+
+            </td>
+
+
         </tr>
       ))}
     </tbody>
@@ -465,15 +518,14 @@ const handleReset = async () => {
     )}
 
 
-    <div className="flex justify-center items-center gap-3 mt-6">
+  <div className="flex justify-center items-center gap-3 mt-6">
 
   <button
     disabled={page === 0}
     onClick={() =>
       setPage(page - 1)
     }
-    className="bg-gray-600 text-white px-4 py-2 rounded disabled:opacity-50"
-  >
+    className="bg-gray-600 text-white px-4 py-2 rounded disabled:opacity-50">
     Previous
   </button>
 
@@ -494,8 +546,7 @@ const handleReset = async () => {
     onClick={() =>
       setPage(page + 1)
     }
-    className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
-  >
+    className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50">
     Next
   </button>
 
@@ -530,6 +581,40 @@ const handleReset = async () => {
       </div>
 
     )}
+
+
+
+    {selectedVideo && (
+
+<div className="fixed inset-0 bg-black/80 flex justify-center items-center z-50 p-4 mt-25">
+
+<div className="bg-white p-3 rounded-lg max-w-5xl w-full">
+
+<div className="flex justify-end mb-2">
+
+<button
+onClick={() =>
+setSelectedVideo(null)
+}
+className="bg-red-600 text-white px-3 py-1 rounded"
+>
+Close
+</button>
+
+</div>
+
+<video
+controls
+className="max-w-full max-h-[70vh] mx-auto rounded"
+>
+<source src={selectedVideo} />
+</video>
+
+</div>
+
+</div>
+
+)}
 
 {selectedNotes && (
 
