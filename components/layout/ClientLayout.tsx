@@ -35,7 +35,7 @@ export default function ClientLayout({
             </button>
 
             {/* Logo */}
-            <div className="relative w-10 h-20 md:w-12 md:h-12 flex-shrink-0">
+            <div className="relative w-10 h-10 md:w-12 md:h-12 flex-shrink-0">
               <Image
                 src="/LOGO.png"
                 alt="OWL Security"
