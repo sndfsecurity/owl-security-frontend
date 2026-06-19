@@ -10,7 +10,7 @@ import {
 
 import {
   getReportsByClientId,
-  getClientReportsByDate
+   getReportsByDateRange
 } from "@/services/reportService";
 
 export default function ClientReportsPage() {
@@ -24,65 +24,18 @@ export default function ClientReportsPage() {
   const [selectedImage, setSelectedImage] =
   useState<string | null>(null);
 
-  const [selectedDate, setSelectedDate] = useState("");
-
-const [selectedNote, setSelectedNote] =
+  const [selectedVideo, setSelectedVideo] =
   useState<string | null>(null);
 
-  const handleDateFilter = async (
-  date: string
-) => {
+ const [fromDate, setFromDate] = useState("");
 
-  setSelectedDate(date);
+ const [toDate, setToDate] = useState("");
 
-  try {
+const [selectedNote, setSelectedNote] =
+useState<string | null>(null);
 
-   if (!date) {
+  
 
-  if (client) {
-
-    const reportData =
-      await getReportsByClientId(
-        client.id
-      );
-
-    console.log(reportData);
-
-    setReports(
-      Array.isArray(reportData)
-        ? reportData
-        : reportData?.content || []
-    );
-
-  }
-
-  return;
-
-}
-
-    const formattedDate =
-      date
-        .split("-")
-        .reverse()
-        .join("-");
-
-    const reportData =
-      await getClientReportsByDate(
-        client.id,
-        formattedDate
-      );
-
-      
-
-    setReports(reportData.content || []);
-
-  } catch (error) {
-
-    console.error(error);
-
-  }
-
-};
 
   useEffect(() => {
 
@@ -130,6 +83,55 @@ const [selectedNote, setSelectedNote] =
   ? reports
   : [];
 
+
+  const handleSearch = async () => {
+
+  if (!fromDate || !toDate) {
+
+    alert("Please select both dates");
+
+    return;
+
+  }
+
+  try {
+
+    const data =
+      await getReportsByDateRange(
+        fromDate,
+        toDate,
+        client.id,
+        0,
+        20
+      );
+
+    setReports(data.content || []);
+
+  } catch (error) {
+
+    console.error(error);
+
+  }
+
+};
+
+
+const handleClear = async () => {
+
+  setFromDate("");
+
+  setToDate("");
+  const reportData =
+    await getReportsByClientId(
+      client.id
+    );
+
+  setReports(
+    reportData.content || []
+  );
+
+};
+
   return (
      <ClientLayout>
 
@@ -146,8 +148,7 @@ const [selectedNote, setSelectedNote] =
     shadow-[0_12px_35px_rgba(59,130,246,0.08)]
     overflow-hidden
     mb-6
-  "
->
+  ">
   {/* Header */}
   <div
     className="
@@ -158,9 +159,8 @@ const [selectedNote, setSelectedNote] =
       px-6
       py-5
       border-b-2
-      border-blue-100
-    "
-  >
+      border-blue-100">
+
     <h2 className="text-slate-800 text-2xl font-bold">
       Client Information
     </h2>
@@ -187,9 +187,8 @@ const [selectedNote, setSelectedNote] =
           hover:shadow-[0_12px_30px_rgba(59,130,246,0.15)]
           hover:-translate-y-1
           transition-all
-          duration-300
-        "
-      >
+          duration-300">
+
         <div className="absolute top-0 left-0 h-full w-1.5 bg-blue-500 rounded-l-2xl"></div>
 
         <p className="text-xs uppercase font-bold tracking-wider text-blue-600">
@@ -214,9 +213,8 @@ const [selectedNote, setSelectedNote] =
           hover:shadow-[0_12px_30px_rgba(16,185,129,0.15)]
           hover:-translate-y-1
           transition-all
-          duration-300
-        "
-      >
+          duration-300">
+
         <div className="absolute top-0 left-0 h-full w-1.5 bg-emerald-500 rounded-l-2xl"></div>
 
         <p className="text-xs uppercase font-bold tracking-wider text-emerald-600">
@@ -232,43 +230,36 @@ const [selectedNote, setSelectedNote] =
   </div>
 </div>
 
-<div className="bg-white p-4 rounded-xl shadow mb-4 flex flex-col sm:flex-row sm:items-center gap-3">
-  <label className="font-medium">
-    Filter By Date:
-  </label>
+<div className="bg-white p-4 rounded-xl shadow mb-4 flex flex-wrap gap-3">
 
   <input
     type="date"
-    value={selectedDate}
-    onChange={(e) =>
-      handleDateFilter(
-        e.target.value
-      )
-    }
-    className="border p-2 rounded"
-  />
+    value={fromDate}
+    onChange={(e) => setFromDate(e.target.value)}
+    className="border p-2 rounded"/>
+
+  <input
+    type="date"
+    value={toDate}
+    onChange={(e) => setToDate(e.target.value)}
+    className="border p-2 rounded"/>
 
   <button
-    onClick={async () => {
+    onClick={handleSearch}
+    className="bg-blue-600 text-white px-4 py-2 rounded">
+    Search
+  </button>
 
-      setSelectedDate("");
-
-            const reportData =
-        await getReportsByClientId(
-          client.id
-        );
-
-      setReports(reportData.content || []);
-
-    }}
-    className="bg-gray-500 text-white px-4 py-2 rounded"
-  >
+  <button
+    onClick={handleClear}
+    className="bg-gray-500 text-white px-4 py-2 rounded">
     Clear
   </button>
 
 </div>
 
-      {/* Desktop Table */}
+
+{/* Desktop Table */}
 <div className="hidden md:block bg-white rounded-xl shadow overflow-x-auto">
 
   <table className="w-full min-w-[900px]">
@@ -297,7 +288,7 @@ const [selectedNote, setSelectedNote] =
         </th>
 
         <th className="p-3 text-left">
-          Image
+          Attachment
         </th>
 
       </tr>
@@ -306,12 +297,11 @@ const [selectedNote, setSelectedNote] =
 
     <tbody>
 
-      {reportList.map((report:any) =>( 
+{reportList.map((report:any) =>( 
 
         <tr
   key={report.id}
-  className="border-b hover:bg-slate-50"
->
+  className="border-b hover:bg-slate-50">
 
   <td className="p-3">
     {report.reportDate}
@@ -368,7 +358,9 @@ const [selectedNote, setSelectedNote] =
 
   <td className="p-3">
 
-    {report.imageUrl ? (
+  <div className="flex gap-2">
+
+    {report.imageUrl && (
 
       <button
         onClick={() =>
@@ -378,14 +370,35 @@ const [selectedNote, setSelectedNote] =
         }
         className="bg-blue-600 text-white px-3 py-1 rounded"
       >
-        View
+        View Image
       </button>
 
-    ) : (
-      <span>No Image</span>
     )}
 
-  </td>
+    {report.videoUrl && (
+
+      <button
+        onClick={() =>
+          setSelectedVideo(
+            `http://localhost:8080/uploads/${report.videoUrl}`
+          )
+        }
+        className="bg-purple-600 text-white px-3 py-1 rounded"
+      >
+        Play Video
+      </button>
+
+    )}
+
+    {!report.imageUrl && !report.videoUrl && (
+
+      <span>No Attachment</span>
+
+    )}
+
+  </div>
+
+</td>
 
 </tr>
 
@@ -517,26 +530,44 @@ const [selectedNote, setSelectedNote] =
         </div>
 
         {/* Image */}
-        {report.imageUrl ? (
+        
+         {report.imageUrl && (
 
-          <button
-            onClick={() =>
-              setSelectedImage(
-                `http://localhost:8080/uploads/${report.imageUrl}`
-              )
-            }
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-xl font-medium transition"
-          >
-            View Image
-          </button>
+    <button
+      onClick={() =>
+        setSelectedImage(
+          `http://localhost:8080/uploads/${report.imageUrl}`
+        )
+      }
+      className="w-full bg-blue-600 text-white py-2 rounded-xl"
+    >
+      View Image
+    </button>
 
-        ) : (
+  )}
 
-          <div className="w-full bg-gray-100 text-center py-2 rounded-xl text-gray-500">
-            No Image Available
-          </div>
+  {report.videoUrl && (
 
-        )}
+    <button
+      onClick={() =>
+        setSelectedVideo(
+          `http://localhost:8080/uploads/${report.videoUrl}`
+        )
+      }
+      className="w-full bg-purple-600 text-white py-2 rounded-xl"
+    >
+      Play Video
+    </button>
+
+  )}
+
+  {!report.imageUrl && !report.videoUrl && (
+
+    <div className="w-full bg-gray-100 text-center py-2 rounded-xl text-gray-500">
+      No Attachment 
+    </div>
+
+  )}
 
       </div>
 
@@ -555,6 +586,34 @@ const [selectedNote, setSelectedNote] =
 
         <button
           onClick={() => setSelectedImage(null)}
+          className="bg-red-600 text-white px-4 py-2 rounded-lg">
+          Close
+        </button>
+
+      </div>
+
+        <img
+          src={selectedImage}
+          alt="Report"
+          className="max-w-full max-h-[50vh] rounded"/>
+
+    </div>
+
+  </div>
+)}
+
+{selectedVideo && (
+
+  <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+
+    <div className="bg-white rounded-2xl p-4 max-w-[95vw]">
+
+      <div className="flex justify-end mb-3">
+
+        <button
+          onClick={() =>
+            setSelectedVideo(null)
+          }
           className="bg-red-600 text-white px-4 py-2 rounded-lg"
         >
           Close
@@ -562,16 +621,20 @@ const [selectedNote, setSelectedNote] =
 
       </div>
 
-      <img
-        src={selectedImage}
-        alt="Report"
-        className="max-h-[80vh] max-w-[90vw] rounded-lg"
-      />
+      <video
+        controls
+        className="max-w-full max-h-[65vh] rounded"
+
+      >
+        <source src={selectedVideo} />
+      </video>
 
     </div>
 
   </div>
+
 )}
+
 
 {selectedNote && (
   <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">

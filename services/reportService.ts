@@ -187,16 +187,17 @@ getReportsByDateRange(
 
   }
 
-  const response =
-    await fetch(
-      url,
-      {
-        headers: {
-          Authorization:
-            `Bearer ${token}`,
-        },
-      }
-    );
+ const response = await fetch(url,{
+  headers:{
+    Authorization:`Bearer ${token}`,
+  },
+});
+
+if (!response.ok) {
+  throw new Error(await response.text());
+}
+
+return response.json();
 
   return response.json();
 }
