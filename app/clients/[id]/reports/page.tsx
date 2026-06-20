@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
+import { FiDownload } from "react-icons/fi";
+
 import { getClientById } from "@/services/clientService";
 
 import { uploadImage }
@@ -13,6 +15,7 @@ import {
   createReport,
   getReportsByClientId,
   deleteReport,
+  downloadImage
 } from "@/services/reportService";
 
 
@@ -214,6 +217,15 @@ useEffect(() => {
   loadReports(page);
 
 }, [clientId, page]);
+
+
+const handleDownloadImage = async () => {
+
+  if (!selectedViewImage) return;
+
+  await downloadImage(selectedViewImage);
+
+};
 
   return (
     <DashboardLayout>
@@ -779,18 +791,28 @@ useEffect(() => {
 
 {selectedViewImage && (
 
-  <div
-    className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
-  >
+  <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
 
     <div className="bg-white p-4 rounded-lg max-w-4xl max-h-[90vh] overflow-auto mt-25">
 
-      <div className="flex justify-end mb-3">
+      <div className="flex justify-end gap-3 mb-3">
 
         <button
-          onClick={() =>
-            setSelectedViewImage(null)
-          }
+              onClick={handleDownloadImage}
+              className="
+                bg-blue-600
+                hover:bg-blue-700
+                text-white
+                p-2
+                rounded-lg
+                transition
+              "
+              title="Download Image">
+              <FiDownload size={20} />
+      </button>
+
+        <button
+          onClick={() => setSelectedViewImage(null)}
           className="bg-red-600 text-white px-3 py-1 rounded"
         >
           Close

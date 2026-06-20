@@ -227,3 +227,30 @@ export async function getRecentReports() {
 
   return response.json();
 }
+
+
+export async function downloadImage(imageName: string) {
+
+  const response = await fetch(
+    `${API_BASE_URL}/uploads/${imageName}`
+  );
+
+  const blob = await response.blob();
+
+  const url = window.URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+
+  a.href = url;
+
+  a.download = imageName;
+
+  document.body.appendChild(a);
+
+  a.click();
+
+  a.remove();
+
+  window.URL.revokeObjectURL(url);
+
+}

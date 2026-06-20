@@ -10,8 +10,12 @@ import {
 
 import {
   getReportsByClientId,
-   getReportsByDateRange
+  getReportsByDateRange,
+  downloadImage
 } from "@/services/reportService";
+
+import { FiDownload } from "react-icons/fi";
+
 
 export default function ClientReportsPage() {
 
@@ -139,6 +143,21 @@ const handleClear = async () => {
     setReports(reportData.content || []);
 
     setTotalPages(reportData.totalPages || 0);
+
+};
+
+
+const handleDownloadImage = async () => {
+
+  if (!selectedImage) return;
+
+  const imageName = selectedImage.split("/").pop();
+
+  if (imageName) {
+
+    await downloadImage(imageName);
+
+  }
 
 };
 
@@ -614,7 +633,21 @@ const handleClear = async () => {
 
     <div className="bg-white rounded-2xl p-4 max-w-[95vw]">
 
-      <div className="flex justify-end mb-3">
+      <div className="flex justify-end mb-3 gap-3">
+
+        <button
+              onClick={handleDownloadImage}
+              className="
+                        bg-blue-600
+                        hover:bg-blue-700
+                        text-white
+                        p-2
+                        rounded-lg
+                        transition
+                      "
+                title="Download Image">
+                <FiDownload size={20} />
+        </button>
 
         <button
           onClick={() => setSelectedImage(null)}

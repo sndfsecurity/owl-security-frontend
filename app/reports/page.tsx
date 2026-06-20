@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { getReports,   getReportsByDateRange
+import { getReports,   getReportsByDateRange,  downloadImage
  } from "@/services/reportService";
 import { getClients } from "@/services/clientService";
+
+import { FiDownload } from "react-icons/fi";
+
 
 export default function ReportsPage() {
   const [reports, setReports] = useState<any[]>([]);
@@ -148,6 +151,20 @@ const handleReset = async () => {
   setPage(0);
 
   loadReports(0);
+};
+
+const handleDownloadImage = async () => {
+
+  if (!selectedImage) return;
+
+  const imageName = selectedImage.split("/").pop();
+
+  if (imageName) {
+
+    await downloadImage(imageName);
+
+  }
+
 };
 
   return (
@@ -557,7 +574,21 @@ const handleReset = async () => {
 
         <div className="bg-white p-3 rounded-lg max-w-4xl w-full">
 
-          <div className="flex justify-end mb-2">
+          <div className="flex justify-end mb-3 gap-3">
+    
+              <button
+                    onClick={handleDownloadImage}
+                    className="
+                            bg-blue-600
+                            hover:bg-blue-700
+                            text-white
+                            p-2
+                            rounded-lg
+                            transition
+                          "
+                      title="Download Image">
+                      <FiDownload size={20} />
+              </button>
 
             <button
               onClick={() =>
