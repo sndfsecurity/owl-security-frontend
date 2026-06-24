@@ -1,4 +1,3 @@
-import API_BASE_URL from "./api";
 
 // export async function login(
 //   email: string,
@@ -20,6 +19,9 @@ import API_BASE_URL from "./api";
 
 //   return response.json();
 // }
+
+import API_BASE_URL from "./api";
+
 
 export async function registerUser(
   name: string,

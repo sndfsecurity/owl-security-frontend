@@ -219,11 +219,23 @@ useEffect(() => {
 }, [clientId, page]);
 
 
-const handleDownloadImage = async () => {
+const handleDownloadImage = () => {
 
   if (!selectedViewImage) return;
 
-  await downloadImage(selectedViewImage);
+  const link = document.createElement("a");
+
+  link.href = selectedViewImage;
+
+  link.download = "report-image";
+
+  link.target = "_blank";
+
+  document.body.appendChild(link);
+
+  link.click();
+
+  document.body.removeChild(link);
 
 };
 
@@ -820,8 +832,10 @@ const handleDownloadImage = async () => {
 
       </div>
 
+      console.log(selectedViewImage);
+      
       <img
-        src={`http://localhost:8080/uploads/${selectedViewImage}`}
+        src={selectedViewImage}
         alt="Report"
         className="max-w-full max-h-[65vh] rounded"
       />
@@ -857,7 +871,7 @@ const handleDownloadImage = async () => {
         className="max-w-full max-h-[65vh] rounded"
       >
         <source
-          src={`http://localhost:8080/uploads/${selectedViewVideo}`}
+          src={selectedViewVideo}
         />
       </video>
 
