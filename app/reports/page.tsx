@@ -153,18 +153,15 @@ const handleReset = async () => {
   loadReports(0);
 };
 
-const handleDownloadImage = async () => {
-
+const handleDownloadImage = () => {
   if (!selectedImage) return;
 
-  const imageName = selectedImage.split("/").pop();
-
-  if (imageName) {
-
-    await downloadImage(imageName);
-
-  }
-
+  const link = document.createElement("a");
+  link.href = selectedImage;
+  link.download = "report-image";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 };
 
   return (
@@ -191,7 +188,7 @@ const handleDownloadImage = async () => {
               All Clients
             </option>
 
-{(clients || []).map((client) => (
+          {(clients || []).map((client) => (
               <option
                 key={client.id}
                 value={client.id}
@@ -360,6 +357,7 @@ const handleDownloadImage = async () => {
 </div>
 
         {/* Footer */}
+
         <div className="flex justify-end border-t pt-3">
 
           
@@ -367,12 +365,9 @@ const handleDownloadImage = async () => {
 
             <button
             onClick={() =>
-            setSelectedImage(
-            `http://localhost:8080/uploads/${report.imageUrl}`
-            )
+            setSelectedImage(report.imageUrl)
             }
-            className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg"
-            >
+            className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg">
             View Image
             </button>
 
@@ -382,12 +377,9 @@ const handleDownloadImage = async () => {
 
             <button
             onClick={() =>
-            setSelectedVideo(
-            `http://localhost:8080/uploads/${report.videoUrl}`
-            )
+            setSelectedVideo(report.videoUrl)
             }
-            className="text-sm bg-purple-600 text-white px-4 py-2 rounded-lg"
-            >
+            className="text-sm bg-purple-600 text-white px-4 py-2 rounded-lg">
             Play Video
             </button>
 
@@ -487,9 +479,7 @@ const handleDownloadImage = async () => {
 
             <button
             onClick={() =>
-            setSelectedImage(
-            `http://localhost:8080/uploads/${report.imageUrl}`
-            )
+            setSelectedImage(report.imageUrl)
             }
             className="bg-blue-600 text-white px-3 py-1 rounded">
             View Image
@@ -501,12 +491,9 @@ const handleDownloadImage = async () => {
 
             <button
             onClick={() =>
-            setSelectedVideo(
-            `http://localhost:8080/uploads/${report.videoUrl}`
-            )
+            setSelectedVideo(report.videoUrl)
             }
-            className="bg-purple-600 text-white px-3 py-1 rounded"
-            >
+            className="bg-purple-600 text-white px-3 py-1 rounded">
             Play Video
             </button>
 
