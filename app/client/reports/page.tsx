@@ -151,11 +151,33 @@ const handleDownloadImage = async () => {
 
   if (!selectedImage) return;
 
-  const imageName = selectedImage.split("/").pop();
+  try {
 
-  if (imageName) {
+    const response = await fetch(selectedImage);
 
-    await downloadImage(imageName);
+    const blob = await response.blob();
+
+    const url = window.URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+
+    link.href = url;
+
+    link.download = "report-image.jpg";
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+
+    window.URL.revokeObjectURL(url);
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert("Failed to download image");
 
   }
 
@@ -391,9 +413,7 @@ const handleDownloadImage = async () => {
 
       <button
         onClick={() =>
-          setSelectedImage(
-            `http://localhost:8080/uploads/${report.imageUrl}`
-          )
+          setSelectedImage(report.imageUrl)
         }
         className="bg-blue-600 text-white px-3 py-1 rounded">
         View Image
@@ -405,12 +425,9 @@ const handleDownloadImage = async () => {
 
       <button
         onClick={() =>
-          setSelectedVideo(
-            `http://localhost:8080/uploads/${report.videoUrl}`
-          )
+          setSelectedVideo(report.videoUrl)
         }
-        className="bg-purple-600 text-white px-3 py-1 rounded"
-      >
+        className="bg-purple-600 text-white px-3 py-1 rounded">
         Play Video
       </button>
 
@@ -442,8 +459,7 @@ const handleDownloadImage = async () => {
 
     <div
       key={report.id}
-      className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden"
-    >
+      className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
 
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-800 to-indigo-700 text-white p-3">
@@ -479,8 +495,7 @@ const handleDownloadImage = async () => {
                 : report.status === "OBSERVATION"
                 ? "bg-yellow-100 text-yellow-700"
                 : "bg-red-100 text-red-700"
-            }`}
-          >
+            }`}>
             {report.status}
           </span>
 
@@ -500,8 +515,7 @@ const handleDownloadImage = async () => {
                 : report.priority === "MEDIUM"
                 ? "bg-yellow-100 text-yellow-700"
                 : "bg-green-100 text-green-700"
-            }`}
-          >
+            }`}>
             {report.priority}
           </span>
 
@@ -538,9 +552,7 @@ const handleDownloadImage = async () => {
                   font-semibold
                   shadow-md
                   transition-all
-                  duration-200
-                "
-              >
+                  duration-200">
                 Read More
               </button>
             </>
@@ -561,12 +573,9 @@ const handleDownloadImage = async () => {
 
     <button
       onClick={() =>
-        setSelectedImage(
-          `http://localhost:8080/uploads/${report.imageUrl}`
-        )
+        setSelectedImage(report.imageUrl)
       }
-      className="w-full bg-blue-600 text-white py-2 rounded-xl"
-    >
+      className="w-full bg-blue-600 text-white py-2 rounded-xl">
       View Image
     </button>
 
@@ -576,12 +585,9 @@ const handleDownloadImage = async () => {
 
     <button
       onClick={() =>
-        setSelectedVideo(
-          `http://localhost:8080/uploads/${report.videoUrl}`
-        )
+        setSelectedVideo(report.videoUrl)
       }
-      className="w-full bg-purple-600 text-white py-2 rounded-xl"
-    >
+      className="w-full bg-purple-600 text-white py-2 rounded-xl">
       Play Video
     </button>
 
