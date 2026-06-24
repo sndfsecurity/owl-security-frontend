@@ -219,23 +219,39 @@ useEffect(() => {
 }, [clientId, page]);
 
 
-const handleDownloadImage = () => {
+const handleDownloadImage = async () => {
 
   if (!selectedViewImage) return;
 
-  const link = document.createElement("a");
+  try {
 
-  link.href = selectedViewImage;
+    const response = await fetch(selectedViewImage);
 
-  link.download = "report-image";
+    const blob = await response.blob();
 
-  link.target = "_blank";
+    const url = window.URL.createObjectURL(blob);
 
-  document.body.appendChild(link);
+    const link = document.createElement("a");
 
-  link.click();
+    link.href = url;
 
-  document.body.removeChild(link);
+    link.download = "report-image.jpg";
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+
+    window.URL.revokeObjectURL(url);
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert("Download failed");
+
+  }
 
 };
 
@@ -832,8 +848,6 @@ const handleDownloadImage = () => {
 
       </div>
 
-      console.log(selectedViewImage);
-      
       <img
         src={selectedViewImage}
         alt="Report"
