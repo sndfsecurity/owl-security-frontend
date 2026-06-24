@@ -153,15 +153,29 @@ const handleReset = async () => {
   loadReports(0);
 };
 
-const handleDownloadImage = () => {
+const handleDownloadImage = async () => {
   if (!selectedImage) return;
 
-  const link = document.createElement("a");
-  link.href = selectedImage;
-  link.download = "report-image";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  try {
+    const response = await fetch(selectedImage);
+    const blob = await response.blob();
+
+    const url = window.URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "report-image.jpg";
+
+    document.body.appendChild(link);
+    link.click();
+
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+  } catch (error) {
+    console.error("Download failed:", error);
+    alert("Failed to download image");
+  }
 };
 
   return (
