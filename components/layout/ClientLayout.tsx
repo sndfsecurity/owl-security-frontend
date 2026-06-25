@@ -120,12 +120,12 @@ export default function ClientLayout({
             </div>
 
             <span className="hidden sm:block text-lg font-medium text-slate-700">
-              Client
+              Client 
             </span>
 
           </div>
 
-        </div>
+        </div> 
       </header>
 
       {/* Mobile Overlay */}
@@ -143,7 +143,7 @@ export default function ClientLayout({
           h-[calc(100vh-80px)]
           w-64
           bg-[#061540]
-          text-white
+          text-white 
           z-50
           transform transition-transform duration-300 ease-in-out
           ${
@@ -153,7 +153,7 @@ export default function ClientLayout({
           }
           lg:translate-x-0
         `}
-      >
+      > 
 
         <nav className="flex flex-col pt-4">
 
@@ -193,7 +193,7 @@ export default function ClientLayout({
       <main className="pt-24 lg:ml-64 p-4 md:p-6">
         {children}
       </main>
-
+ 
     </div>
   );
 }
