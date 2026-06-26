@@ -150,7 +150,7 @@ const formatReportDate = (dateStr: string) => {
         </div>
 
         {/* Reports Today */}
-        <div className="relative overflow-hidden rounded-2xl p-6 shadow-lg bg-gradient-to-br from-emerald-500 to-green-600 text-white transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+        <div className="relativ-0e overflow-hidden rounded-2xl p-6 shadow-lg bg-gradient-to-br from-emerald-500 to-green-600 text-white transition-all duration-300 hover:scale-105 hover:shadow-2xl">
           <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-8 -mt-8"></div>
           <h3 className="text-white/90 font-medium text-[22px] tracking-[1px]">
             Reports Today
@@ -318,7 +318,7 @@ const formatReportDate = (dateStr: string) => {
 
   </div>
 
-</div>
+</div> 
 
 </div>
 
