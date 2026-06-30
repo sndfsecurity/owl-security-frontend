@@ -170,7 +170,7 @@ const formatReportDate = (dateStr: string) => {
             {stats.alerts}
           </p>
         </div>
-
+ 
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6 mt-8">

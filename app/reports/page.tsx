@@ -612,14 +612,14 @@ const handleDownloadImage = async () => {
       </div>
 
     )}
-
+ 
 
 
     {selectedVideo && (
 
 <div className="fixed inset-0 bg-black/80 flex justify-center items-center z-50 p-4 mt-25">
 
-<div className="bg-white p-3 rounded-lg max-w-5xl w-full">
+<div className="bg-white p-3 rounded-lg  max-w-5xl w-full">
 
 <div className="flex justify-end mb-2">
 
