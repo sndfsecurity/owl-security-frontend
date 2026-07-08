@@ -15,7 +15,6 @@ import {
   createReport,
   getReportsByClientId,
   deleteReport,
-  downloadImage
 } from "@/services/reportService";
 
 
@@ -48,6 +47,8 @@ export default function ClientReportsPage() {
 
   const [selectedNotes, setSelectedNotes] =
   useState<string | null>(null);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [reportData, setReportData] =
     useState({
@@ -98,31 +99,26 @@ export default function ClientReportsPage() {
 
 };
 
-  const handleSubmit = async () => {
+const handleSubmit = async () => {
+
+  if (isSubmitting) return;
+
+  setIsSubmitting(true);
 
   try {
 
-       let imagePath = "";
-        let videoPath = "";
+    let imagePath = "";
+    let videoPath = "";
 
-        if (selectedImage) {
+    if (selectedImage) {
+      imagePath = await uploadImage(selectedImage);
+    }
 
-          imagePath =
-            await uploadImage(
-              selectedImage
-            );
+    if (selectedVideo) {
+      videoPath = await uploadImage(selectedVideo);
+    }
 
-        }
-        if (selectedVideo) {
-
-          videoPath =
-            await uploadImage(
-              selectedVideo
-            );
-
-        }
-
-   await createReport({
+    await createReport({
 
       clientId: clientId,
 
@@ -142,12 +138,9 @@ export default function ClientReportsPage() {
 
     });
 
-    alert(
-      "Report Saved Successfully"
-    );
+    alert("Report Saved Successfully");
 
     setSelectedImage(null);
-
     setSelectedVideo(null);
 
     setReportData({
@@ -166,11 +159,14 @@ export default function ClientReportsPage() {
 
     console.error(error);
 
-    alert(
-      "Failed to save report"
-    );
+    alert("Failed to save report");
+
+  } finally {
+
+    setIsSubmitting(false);
 
   }
+
 };
 
 
@@ -411,7 +407,7 @@ const handleDownloadImage = async () => {
           <button
             onClick={handleSubmit}
             className="mt-4 bg-green-600 text-white px-4 py-2 rounded">
-            Save Report
+             {isSubmitting ? "Submitting Report..." : "Save Report"}
           </button>
         </div>
       )}

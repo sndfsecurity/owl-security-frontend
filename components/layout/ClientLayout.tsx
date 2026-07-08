@@ -78,39 +78,37 @@ export default function ClientLayout({
 
             {/* Title */}
             <h1 className="font-bold text-xl sm:text-2xl md:text-3xl text-slate-900">
-              Owl Security Portal
+              Owl Security Surveillance Portal
             </h1>
 
           </div>
 
           {/* Live Date & Time */}
-<div
-  className="
-    hidden lg:flex
-    items-center
-    px-6
-    py-3
-    bg-white
-    rounded-2xl
-    border
-    border-slate-200
-    shadow-lg
-  "
->
+        <div
+          className="
+            hidden lg:flex
+            items-center
+            px-6
+            py-3
+            bg-white
+            rounded-2xl
+            border
+            border-slate-200
+            shadow-lg">
 
-  <span className="text-slate-700 font-bold text-xl">
-    {currentDate}
-  </span>
+          <span className="text-slate-700 font-bold text-xl">
+            {currentDate}
+          </span>
 
-  <span className="mx-3 text-slate-400 font-bold">
-    |
-  </span>
+          <span className="mx-3 text-slate-400 font-bold">
+            |
+          </span>
 
-  <span className="text-slate-800 font-bold text-xl">
-    {currentTime}
-  </span>
+          <span className="text-slate-800 font-bold text-xl">
+            {currentTime}
+          </span>
 
-</div>
+        </div>
 
           {/* Right Section */}
           <div className="flex items-center gap-3">

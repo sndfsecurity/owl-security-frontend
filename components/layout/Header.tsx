@@ -61,7 +61,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
             <h1 className="font-extrabold leading-tight text-sm sm:text-xl md:text-4xl lg:text-5xl whitespace-nowrap">
               <span className="text-slate-900">OWL </span>
-              <span className="text-blue-600">SECURITY</span>
+              <span className="text-blue-600">SECURITY Surveillance</span>
               <span className="text-slate-900"> PORTAL</span>
             </h1>
 
