@@ -19,7 +19,7 @@ import {
 import { FiDownload } from "react-icons/fi";
 
 
-export default function ClientReportsPage() {
+ function  ReportsContent() {
 
   const [client, setClient] = useState<any>(null);
 
@@ -207,8 +207,6 @@ if (selectedImages.length === 0) return;
 };
 
   return (
-
-     <Suspense fallback={<div>Loading...</div>}>
 
      <ClientLayout>
 
@@ -874,8 +872,16 @@ if (selectedImages.length === 0) return;
 
   </div>
 )}
-    </ClientLayout>
 
+
+    </ClientLayout>
+  );
+}   // <-- THIS MUST EXIST
+
+export default function ClientReportsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ReportsContent />
     </Suspense>
   );
 }
