@@ -1,4 +1,6 @@
 "use client";
+import { Suspense } from "react";
+
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -205,6 +207,9 @@ if (selectedImages.length === 0) return;
 };
 
   return (
+
+     <Suspense fallback={<div>Loading...</div>}>
+
      <ClientLayout>
 
       <h1 className="text-3xl font-bold mb-6 mt-5">
@@ -870,5 +875,7 @@ if (selectedImages.length === 0) return;
   </div>
 )}
     </ClientLayout>
+
+    </Suspense>
   );
 }
