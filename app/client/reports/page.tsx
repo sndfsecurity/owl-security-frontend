@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import ClientLayout from "@/components/layout/ClientLayout";
 
 import {
@@ -27,8 +27,11 @@ export default function ClientReportsPage() {
 
   const [totalPages, setTotalPages] = useState(0);
 
-  const [selectedImage, setSelectedImage] =
-  useState<string | null>(null);
+  const [selectedImages, setSelectedImages] =
+  useState<string[]>([]);
+
+  const [currentImageIndex, setCurrentImageIndex] =
+  useState(0);
 
   const [selectedVideo, setSelectedVideo] =
   useState<string | null>(null);
@@ -39,6 +42,11 @@ export default function ClientReportsPage() {
 
 const [selectedNote, setSelectedNote] =
 useState<string | null>(null);
+
+const searchParams = useSearchParams();
+
+const statusFilter =
+  searchParams.get("status");
 
   
 
@@ -87,10 +95,22 @@ useState<string | null>(null);
 
  }, [page]);
 
-  const reportList = Array.isArray(reports)
-  ? reports
-  : [];
+ const reportList = useMemo(() => {
 
+  const list = Array.isArray(reports)
+    ? reports
+    : [];
+
+  if (!statusFilter) {
+    return list;
+  }
+
+  return list.filter(
+    (report) => report.status === statusFilter
+  );
+
+}, [reports, statusFilter]);
+  
 
   const handleSearch = async () => {
 
@@ -149,12 +169,13 @@ const handleClear = async () => {
 
 const handleDownloadImage = async () => {
 
-  if (!selectedImage) return;
+if (selectedImages.length === 0) return;
 
   try {
 
-    const response = await fetch(selectedImage);
-
+    const response = await fetch(
+        selectedImages[currentImageIndex]
+      );
     const blob = await response.blob();
 
     const url = window.URL.createObjectURL(blob);
@@ -409,35 +430,42 @@ const handleDownloadImage = async () => {
 
   <div className="flex gap-2">
 
-    {report.imageUrl && (
+    {report.imageUrls?.length > 0 && (
 
-      <button
-        onClick={() =>
-          setSelectedImage(report.imageUrl)
-        }
-        className="bg-blue-600 text-white px-3 py-1 rounded">
-        View Image
-      </button>
+        <button
+          onClick={() => {
+            setSelectedImages(report.imageUrls);
+            setCurrentImageIndex(0);
+          }}
+          className="bg-blue-600 text-white px-3 py-1 rounded">
+          View Image
+          {report.imageUrls.length > 1
+            ? ` (${report.imageUrls.length})`
+            : ""}
+        </button>
 
-    )}
+      )}
 
-    {report.videoUrl && (
+      
+      {report.videoUrl && (
 
-      <button
-        onClick={() =>
-          setSelectedVideo(report.videoUrl)
-        }
-        className="bg-purple-600 text-white px-3 py-1 rounded">
-        Play Video
-      </button>
+        <button
+          onClick={() =>
+            setSelectedVideo(report.videoUrl)
+          }
+          className="bg-purple-600 text-white px-3 py-1 rounded"
+        >
+          Play Video
+        </button>
 
-    )}
+      )}
 
-    {!report.imageUrl && !report.videoUrl && (
+      {!report.imageUrls?.length && !report.videoUrl && (
 
-      <span>No Attachment</span>
+        <span>No Attachment</span>
 
-    )}
+      )}
+    
 
   </div>
 
@@ -569,37 +597,46 @@ const handleDownloadImage = async () => {
 
         {/* Image */}
         
-         {report.imageUrl && (
+            {report.imageUrls?.length > 0 && (
 
-    <button
-      onClick={() =>
-        setSelectedImage(report.imageUrl)
-      }
-      className="w-full bg-blue-600 text-white py-2 rounded-xl">
-      View Image
-    </button>
+            <button
+              onClick={() => {
+                setSelectedImages(report.imageUrls);
+                setCurrentImageIndex(0);
+              }}
+              className="w-full bg-blue-600 text-white py-2 rounded-xl"
+            >
+              View Image
+              {report.imageUrls.length > 1
+                ? ` (${report.imageUrls.length})`
+                : ""}
+            </button>
 
-  )}
+          )}
 
-  {report.videoUrl && (
 
-    <button
-      onClick={() =>
-        setSelectedVideo(report.videoUrl)
-      }
-      className="w-full bg-purple-600 text-white py-2 rounded-xl">
-      Play Video
-    </button>
+          {report.videoUrl && (
 
-  )}
+          <button
+            onClick={() =>
+              setSelectedVideo(report.videoUrl)
+            }
+            className="w-full bg-purple-600 text-white py-2 rounded-xl">
+            Play Video
+          </button>
 
-  {!report.imageUrl && !report.videoUrl && (
+        )}
 
-    <div className="w-full bg-gray-100 text-center py-2 rounded-xl text-gray-500">
-      No Attachment 
-    </div>
+{/* No Attachment */}
 
-  )}
+        {!report.imageUrls?.length && !report.videoUrl && (
+
+          <div className="w-full bg-gray-100 text-center py-2 rounded-xl text-gray-500">
+            No Attachment
+          </div>
+
+        )}
+
 
       </div>
 
@@ -633,45 +670,140 @@ const handleDownloadImage = async () => {
 
 </div>
 
+{selectedImages.length > 0 && (
 
-{selectedImage && (
   <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
 
-    <div className="bg-white rounded-2xl p-4 max-w-[95vw]">
+    <div className="bg-white rounded-2xl p-4 w-full max-w-5xl">
 
-      <div className="flex justify-end mb-3 gap-3">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-4">
 
-        <button
-              onClick={handleDownloadImage}
-              className="
-                        bg-blue-600
-                        hover:bg-blue-700
-                        text-white
-                        p-2
-                        rounded-lg
-                        transition
-                      "
-                title="Download Image">
-                <FiDownload size={20} />
-        </button>
+        <h3 className="font-semibold text-lg">
+          Image {currentImageIndex + 1} of {selectedImages.length}
+        </h3>
 
-        <button
-          onClick={() => setSelectedImage(null)}
-          className="bg-red-600 text-white px-4 py-2 rounded-lg">
-          Close
-        </button>
+        <div className="flex gap-3">
+
+          <button
+            onClick={handleDownloadImage}
+            className="
+              bg-blue-600
+              hover:bg-blue-700
+              text-white
+              p-2
+              rounded-lg
+              transition
+            "
+            title="Download Image"
+          >
+            <FiDownload size={20} />
+          </button>
+
+          <button
+            onClick={() => {
+              setSelectedImages([]);
+              setCurrentImageIndex(0);
+            }}
+            className="bg-red-600 text-white px-4 py-2 rounded-lg"
+          >
+            Close
+          </button>
+
+        </div>
 
       </div>
 
+      {/* Image */}
+
+      <div className="flex justify-center items-center h-[60vh]">
+
         <img
-          src={selectedImage}
-          alt="Report"
-          className="max-w-full max-h-[50vh] rounded"/>
+          src={selectedImages[currentImageIndex]}
+          alt={`Image ${currentImageIndex + 1}`}
+          className="
+            max-w-full
+            max-h-full
+            object-contain
+            rounded-xl
+          "
+        />
+
+      </div>
+
+      {/* Footer */}
+
+      {selectedImages.length > 1 && (
+
+        <div className="flex justify-between items-center mt-5">
+
+          <button
+            disabled={currentImageIndex === 0}
+            onClick={() =>
+              setCurrentImageIndex(currentImageIndex - 1)
+            }
+            className="
+              bg-gray-600
+              text-white
+              px-4
+              py-2
+              rounded
+              disabled:opacity-50
+            "
+          >
+            Previous
+          </button>
+
+          <div className="flex gap-2">
+
+            {selectedImages.map((_, index) => (
+
+              <button
+                key={index}
+                onClick={() =>
+                  setCurrentImageIndex(index)
+                }
+                className={`w-3 h-3 rounded-full ${
+                  index === currentImageIndex
+                    ? "bg-blue-600"
+                    : "bg-gray-300"
+                }`}
+              />
+
+            ))}
+
+          </div>
+
+          <button
+            disabled={
+              currentImageIndex ===
+              selectedImages.length - 1
+            }
+            onClick={() =>
+              setCurrentImageIndex(currentImageIndex + 1)
+            }
+            className="
+              bg-blue-600
+              text-white
+              px-4
+              py-2
+              rounded
+              disabled:opacity-50
+            "
+          >
+            Next
+          </button>
+
+        </div>
+
+      )}
 
     </div>
 
   </div>
+
 )}
+
 
 {selectedVideo && (
 

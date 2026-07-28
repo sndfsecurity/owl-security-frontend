@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import ClientLayout from "@/components/layout/ClientLayout";
 import { getClientByUserId } from "@/services/clientService";
 import { getReportsByClientId } from "@/services/reportService";
-
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+
 export default function ClientDashboardPage() {
   const [name, setName] = useState("");
   const [client, setClient] = useState<any>(null);
   const [reports, setReports] = useState<any[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     const storedName =
@@ -82,48 +84,114 @@ const incidentReports = reportList.filter(
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
 
         {/* Total Reports */}
-        <div className="bg-gradient-to-r from-blue-500 to-blue-700 text-white p-6 rounded-xl shadow-lg hover:scale-105 transition duration-300">
-          <h3 className="text-blue-100">
-            Total Reports
-          </h3>
+        <div
+            onClick={() => router.push("/client/reports")}
+            className="
+              bg-gradient-to-r
+              from-blue-500
+              to-blue-700
+              text-white
+              p-6
+              rounded-xl
+              shadow-lg
+              hover:scale-105
+              cursor-pointer
+              transition
+              duration-300">
 
-          <p className="text-4xl font-bold mt-2">
-            {totalReports}
-          </p>
-        </div>
+            <h3 className="text-blue-100">
+              Total Reports
+            </h3>
+
+            <p className="text-4xl font-bold mt-2">
+              {totalReports}
+            </p>
+
+          </div>
 
         {/* Normal Reports */}
-        <div className="bg-gradient-to-r from-green-500 to-green-700 text-white p-6 rounded-xl shadow-lg hover:scale-105 transition duration-300">
-          <h3 className="text-green-100">
-            Normal Reports
-          </h3>
+        <div
+              onClick={() =>
+                router.push("/client/reports?status=NORMAL")
+              }
+              className="
+                bg-gradient-to-r
+                from-green-500
+                to-green-700
+                text-white
+                p-6
+                rounded-xl
+                shadow-lg
+                hover:scale-105
+                cursor-pointer
+                transition
+                duration-300">
 
-          <p className="text-4xl font-bold mt-2">
-            {normalReports}
-          </p>
-        </div>
+              <h3 className="text-green-100">
+                Normal Reports
+              </h3>
+
+              <p className="text-4xl font-bold mt-2">
+                {normalReports}
+              </p>
+
+            </div>
 
         {/* Observation Reports */}
-        <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-6 rounded-xl shadow-lg hover:scale-105 transition duration-300">
-          <h3 className="text-yellow-100">
-            Observation Reports
-          </h3>
+        <div
+            onClick={() =>
+              router.push("/client/reports?status=OBSERVATION")
+            }
+            className="
+              bg-gradient-to-r
+              from-yellow-400
+              to-orange-500
+              text-white
+              p-6
+              rounded-xl
+              shadow-lg
+              hover:scale-105
+              cursor-pointer
+              transition
+              duration-300">
 
-          <p className="text-4xl font-bold mt-2">
-            {observationReports}
-          </p>
-        </div>
+            <h3 className="text-yellow-100">
+              Observation Reports
+            </h3>
+
+            <p className="text-4xl font-bold mt-2">
+              {observationReports}
+            </p>
+
+          </div>
 
         {/* Incident Reports */}
-        <div className="bg-gradient-to-r from-red-500 to-red-700 text-white p-6 rounded-xl shadow-lg hover:scale-105 transition duration-300">
-          <h3 className="text-red-100">
-            Incident Reports
-          </h3>
+        <div
+              onClick={() =>
+                router.push("/client/reports?status=INCIDENT")
+              }
+              className="
+                bg-gradient-to-r
+                from-red-500
+                to-red-700
+                text-white
+                p-6
+                rounded-xl
+                shadow-lg
+                hover:scale-105
+                cursor-pointer
+                transition
+                duration-300">
 
-          <p className="text-4xl font-bold mt-2">
-            {incidentReports}
-          </p>
-        </div>
+              <h3 className="text-red-100">
+                Incident Reports
+              </h3>
+
+              <p className="text-4xl font-bold mt-2">
+                {incidentReports}
+              </p>
+
+            </div>
 
       </div>
 

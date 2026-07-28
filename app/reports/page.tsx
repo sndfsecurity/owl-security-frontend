@@ -14,8 +14,11 @@ export default function ReportsPage() {
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [selectedImage, setSelectedImage] =
-  useState<string | null>(null);
+  const [selectedViewImages, setSelectedViewImages] =
+  useState<string[]>([]);
+
+  const [currentImageIndex, setCurrentImageIndex] =
+  useState(0);
 
   const [selectedVideo, setSelectedVideo] =
   useState<string | null>(null);
@@ -154,28 +157,41 @@ const handleReset = async () => {
 };
 
 const handleDownloadImage = async () => {
-  if (!selectedImage) return;
+
+  if (selectedViewImages.length === 0) return;
 
   try {
-    const response = await fetch(selectedImage);
+
+    const response = await fetch(
+      selectedViewImages[currentImageIndex]
+    );
+
     const blob = await response.blob();
 
     const url = window.URL.createObjectURL(blob);
 
     const link = document.createElement("a");
+
     link.href = url;
-    link.download = "report-image.jpg";
+
+    link.download = `report-image-${currentImageIndex + 1}.jpg`;
 
     document.body.appendChild(link);
+
     link.click();
 
     document.body.removeChild(link);
+
     window.URL.revokeObjectURL(url);
 
   } catch (error) {
-    console.error("Download failed:", error);
-    alert("Failed to download image");
+
+    console.error(error);
+
+    alert("Download failed");
+
   }
+
 };
 
   return (
@@ -374,18 +390,31 @@ const handleDownloadImage = async () => {
 
         <div className="flex justify-end border-t pt-3">
 
+          {report.imageUrls &&
+              report.imageUrls.length > 0 && (
+
+              <button
+              
+              onClick={() => {
+
+              setSelectedViewImages(
+              report.imageUrls
+              );
+
+              setCurrentImageIndex(0);
+
+              }}
+              className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg">
+
+              View Image
+
+              {report.imageUrls.length > 1 &&
+              ` (${report.imageUrls.length})`}
+
+              </button>
+
+              )}
           
-          {report.imageUrl && (
-
-            <button
-            onClick={() =>
-            setSelectedImage(report.imageUrl)
-            }
-            className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg">
-            View Image
-            </button>
-
-            )}
 
             {report.videoUrl && (
 
@@ -399,7 +428,7 @@ const handleDownloadImage = async () => {
 
             )}
 
-            {!report.imageUrl && !report.videoUrl && (
+            {!report.imageUrls?.length && !report.videoUrl &&(
 
             <span className="text-gray-400 text-sm">
             No Attachment
@@ -489,17 +518,31 @@ const handleDownloadImage = async () => {
 
             <div className="flex gap-2">
 
-            {report.imageUrl && (
+            
+            {report.imageUrls &&
+              report.imageUrls.length > 0 && (
 
-            <button
-            onClick={() =>
-            setSelectedImage(report.imageUrl)
-            }
-            className="bg-blue-600 text-white px-3 py-1 rounded">
-            View Image
-            </button>
+              <button
+              onClick={() => {
 
-            )}
+              setSelectedViewImages(
+              report.imageUrls
+              );
+
+              setCurrentImageIndex(0);
+
+              }}
+              className="bg-blue-600 text-white px-3 py-1 rounded">
+
+              View Image
+
+              {report.imageUrls.length > 1 &&
+              ` (${report.imageUrls.length})`}
+
+              </button>
+
+              )}
+
 
             {report.videoUrl && (
 
@@ -513,7 +556,7 @@ const handleDownloadImage = async () => {
 
             )}
 
-            {!report.imageUrl && !report.videoUrl && (
+            {!report.imageUrls?.length && !report.videoUrl && (
 
             <span>No Attachment</span>
 
@@ -569,53 +612,101 @@ const handleDownloadImage = async () => {
 
 </div>
 
-    {selectedImage && (
+   {selectedViewImages.length > 0 && (
 
-      <div className="fixed inset-0 bg-black/80 flex justify-center items-center z-50 p-4 mt-25">
+<div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
 
-        <div className="bg-white p-3 rounded-lg max-w-4xl w-full">
+  <div className="bg-white rounded-2xl w-full max-w-5xl shadow-2xl overflow-hidden">
 
-          <div className="flex justify-end mb-3 gap-3">
-    
-              <button
-                    onClick={handleDownloadImage}
-                    className="
-                            bg-blue-600
-                            hover:bg-blue-700
-                            text-white
-                            p-2
-                            rounded-lg
-                            transition
-                          "
-                      title="Download Image">
-                      <FiDownload size={20} />
-              </button>
+    {/* Header */}
 
-            <button
-              onClick={() =>
-                setSelectedImage(null)
-              }
-              className="bg-red-600 text-white px-3 py-1 rounded">
-              Close
-            </button>
+    <div className="flex items-center justify-between border-b px-5 py-4">
 
-          </div>
+      <h2 className="font-bold text-xl">
 
-          <img
-            src={selectedImage}
-            alt="Report"
-            className="max-w-full max-h-[65vh] mx-auto rounded"
-          />
+        Image {currentImageIndex + 1} / {selectedViewImages.length}
 
-        </div>
+      </h2>
+
+      <div className="flex gap-3">
+
+        <button
+          onClick={handleDownloadImage}
+          className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg"
+        >
+          <FiDownload size={20} />
+        </button>
+
+        <button
+          onClick={() => {
+
+            setSelectedViewImages([]);
+
+            setCurrentImageIndex(0);
+
+          }}
+          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
+        >
+          Close
+        </button>
 
       </div>
 
-    )}
- 
+    </div>
+
+    {/* Image */}
+
+    <div className="flex justify-center items-center bg-gray-50 p-5">
+
+      <img
+        src={selectedViewImages[currentImageIndex]}
+        alt="Report"
+        className="max-h-[60vh] w-auto max-w-full object-contain rounded-xl shadow"
+      />
+
+    </div>
+
+    {/* Footer */}
+
+    <div className="flex justify-center gap-4 p-4 border-t">
+
+      <button
+        disabled={currentImageIndex === 0}
+        onClick={() =>
+          setCurrentImageIndex(
+            currentImageIndex - 1
+          )
+        }
+        className="bg-gray-600 disabled:bg-gray-300 text-white px-5 py-2 rounded-lg"
+      >
+        Previous
+      </button>
+
+      <button
+        disabled={
+          currentImageIndex ===
+          selectedViewImages.length - 1
+        }
+        onClick={() =>
+          setCurrentImageIndex(
+            currentImageIndex + 1
+          )
+        }
+        className="bg-blue-600 disabled:bg-blue-300 text-white px-5 py-2 rounded-lg"
+      >
+        Next
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+)}
 
 
-    {selectedVideo && (
+{selectedVideo && (
 
 <div className="fixed inset-0 bg-black/80 flex justify-center items-center z-50 p-4 mt-25">
 

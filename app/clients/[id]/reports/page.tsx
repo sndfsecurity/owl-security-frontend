@@ -8,8 +8,11 @@ import { FiDownload } from "react-icons/fi";
 
 import { getClientById } from "@/services/clientService";
 
-import { uploadImage }
-  from "@/services/uploadService";
+import {
+  uploadImages,
+  uploadVideo
+} from "@/services/uploadService";
+
 
 import {
   createReport,
@@ -33,14 +36,17 @@ export default function ClientReportsPage() {
 
   const [totalPages, setTotalPages] = useState(0);
 
-  const [selectedImage, setSelectedImage] =
-    useState<File | null>(null);
+  const [selectedImages, setSelectedImages] =
+  useState<File[]>([]);
 
-    const [selectedVideo, setSelectedVideo] =
-    useState<File | null>(null);
+  const [selectedVideo, setSelectedVideo] =
+  useState<File | null>(null);
 
-  const [selectedViewImage, setSelectedViewImage] =
-  useState<string | null>(null);
+  const [selectedViewImages, setSelectedViewImages] =
+  useState<string[]>([]);
+
+  const [currentImageIndex, setCurrentImageIndex] =
+  useState(0);
 
   const [selectedViewVideo, setSelectedViewVideo] =
   useState<string | null>(null);
@@ -107,16 +113,27 @@ const handleSubmit = async () => {
 
   try {
 
-    let imagePath = "";
-    let videoPath = "";
+   
+    let imageUrls: string[] = [];
+let videoUrl = "";
 
-    if (selectedImage) {
-      imagePath = await uploadImage(selectedImage);
-    }
+if (selectedImages.length > 0) {
 
-    if (selectedVideo) {
-      videoPath = await uploadImage(selectedVideo);
-    }
+  imageUrls =
+    await uploadImages(
+      selectedImages
+    );
+
+}
+
+if (selectedVideo) {
+
+  videoUrl =
+    await uploadVideo(
+      selectedVideo
+    );
+
+}
 
     await createReport({
 
@@ -132,15 +149,15 @@ const handleSubmit = async () => {
 
       notes: reportData.notes,
 
-      imageUrl: imagePath,
+      imageUrls: imageUrls,
 
-      videoUrl: videoPath,
+      videoUrl: videoUrl,
 
     });
 
     alert("Report Saved Successfully");
 
-    setSelectedImage(null);
+    setSelectedImages([]);
     setSelectedVideo(null);
 
     setReportData({
@@ -217,11 +234,11 @@ useEffect(() => {
 
 const handleDownloadImage = async () => {
 
-  if (!selectedViewImage) return;
+  if (!selectedViewImages) return;
 
   try {
 
-    const response = await fetch(selectedViewImage);
+    const response = await fetch(selectedViewImages[currentImageIndex]);
 
     const blob = await response.blob();
 
@@ -262,8 +279,7 @@ const handleDownloadImage = async () => {
           onClick={() =>
             setShowForm(!showForm)
           }
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
+          className="bg-blue-600 text-white px-4 py-2 rounded">
           {showForm
             ? "Close Form"
             : "Create Report"}
@@ -312,8 +328,7 @@ const handleDownloadImage = async () => {
                   priority: e.target.value,
                 })
               }
-              className="border p-2 rounded"
-            >
+              className="border p-2 rounded">
               <option value="LOW">
                 LOW
               </option>
@@ -345,8 +360,7 @@ const handleDownloadImage = async () => {
               }
               className="border p-2 rounded w-full"
               rows={4}
-              placeholder="Write report notes..."
-            />
+              placeholder="Write report notes..."/>
 
           </div>
 
@@ -359,25 +373,108 @@ const handleDownloadImage = async () => {
     </label>
 
     <input
-      type="file"
-      accept="image/*"
-      onChange={(e) =>
-        setSelectedImage(
-          e.target.files?.[0] || null
-        )
-      }
-      className="
-        w-full
-        border
-        border-slate-300
-        rounded-xl
-        p-3
-        bg-white
-      "
-    />
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={(e) => {
+
+            const files = Array.from(
+              e.target.files || []
+            );
+
+           setSelectedImages((prev) => {
+
+              const updated = [
+                ...prev,
+                ...files
+              ];
+
+              if (updated.length > 3) {
+
+                alert(
+                  "Maximum 3 images allowed"
+                );
+
+                return prev;
+              }
+
+              return updated;
+
+            });
+
+          }}
+          className="
+            w-full
+            border
+            border-slate-300
+            rounded-xl
+            p-3
+            bg-white
+          "/>
+
   </div>
 
-  {/* Video Upload */}
+  {/* image upload preview */}
+
+  {selectedImages.length > 0 && (
+
+  <div className="flex gap-3 mt-3 flex-wrap">
+
+    {selectedImages.map((image, index) => (
+
+      <div
+        key={index}
+        className="relative" >
+
+        <img
+          src={URL.createObjectURL(image)}
+          alt="preview"
+          className="
+            w-24
+            h-24
+            object-cover
+            rounded-lg
+            border  "/>
+
+        <button
+          type="button"
+          onClick={() =>
+            setSelectedImages(
+              selectedImages.filter(
+                (_, i) => i !== index
+              )
+            )
+          }
+          className="
+            absolute
+            -top-2
+            -right-2
+            w-6
+            h-6
+            rounded-full
+            bg-red-600
+            hover:bg-red-700
+            text-white
+            text-sm
+            font-bold
+            flex
+            items-center
+            justify-center
+            shadow-md ">
+
+            ✕
+        </button>
+
+      </div>
+
+    ))}
+
+  </div>
+
+)}
+      
+{/* Video Upload */}
+
   <div>
     <label className="block font-semibold text-slate-700 mb-2">
       🎥 Report Video
@@ -401,6 +498,55 @@ const handleDownloadImage = async () => {
       "
     />
   </div>
+
+
+  {/* video preview */}
+
+  {selectedVideo && (
+
+  <div className="relative mt-3 w-fit">
+
+    <video
+      controls
+      className="
+        w-48
+        rounded-lg
+        border
+      " >
+      <source
+        src={URL.createObjectURL(selectedVideo)}
+      />
+    </video>
+
+    <button
+      type="button"
+      onClick={() =>
+        setSelectedVideo(null)
+      }
+      className="
+        absolute
+        -top-2
+        -right-2
+        w-6
+        h-6
+        rounded-full
+        bg-red-600
+        hover:bg-red-700
+        text-white
+        text-sm
+        font-bold
+        flex
+        items-center
+        justify-center
+        shadow-md ">
+
+         ✕
+    </button>
+
+  </div>
+
+)}
+
 
 </div>
 
@@ -526,20 +672,23 @@ const handleDownloadImage = async () => {
                    
                    <td className="p-3 space-x-2">
 
-                      {report.imageUrl && (
+                      
+                      {report.imageUrls &&
+                        report.imageUrls.length > 0 && (
 
-                      <button
-                      onClick={() =>
-                      setSelectedViewImage(
-                      report.imageUrl
-                      )
-                      }
-                      className="bg-blue-600 text-white px-3 py-1 rounded"
-                      >
-                      View Image
-                      </button>
+                       <button
+                          onClick={() => {
+                            setSelectedViewImages(report.imageUrls);
+                            setCurrentImageIndex(0);
+                          }}
+                          className="bg-blue-600 text-white px-3 py-1 rounded"
+                        >
+                          View Image
+                          {report.imageUrls.length > 1 &&
+                            ` (${report.imageUrls.length})`}
+                        </button>
 
-                      )}
+                        )}
 
                       {report.videoUrl && (
 
@@ -680,23 +829,26 @@ const handleDownloadImage = async () => {
       <div className="grid grid-cols-2 gap-3 mt-5">
 
         
-        {report.imageUrl && (
+        {report.imageUrls &&
+          report.imageUrls.length > 0 && (
 
           <button
-          onClick={() =>
-          setSelectedViewImage(
-          report.imageUrl
-          )
-          }
-          className="
-          bg-blue-600
-          text-white
-          py-3
-          rounded-xl
-          font-semibold"
-          >
-          View Image
-          </button>
+              onClick={() => {
+                setSelectedViewImages(report.imageUrls);
+                setCurrentImageIndex(0);
+              }}
+              className="
+                bg-blue-600
+                text-white
+                py-3
+                rounded-xl
+                font-semibold
+              ">
+              View Image
+              {report.imageUrls.length > 1 &&
+                ` (${report.imageUrls.length})`}
+            </button>
+
 
           )}
 
@@ -720,7 +872,8 @@ const handleDownloadImage = async () => {
 
           )}
 
-          {!report.imageUrl &&
+          {(!report.imageUrls ||
+          report.imageUrls.length === 0) &&
           !report.videoUrl && (
 
           <button
@@ -813,46 +966,85 @@ const handleDownloadImage = async () => {
 
 </div>
 
-{selectedViewImage && (
+{selectedViewImages.length > 0 && (
 
-  <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
 
-    <div className="bg-white p-4 rounded-lg max-w-4xl max-h-[90vh] overflow-auto mt-25">
+  <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl">
 
-      <div className="flex justify-end gap-3 mb-3">
+    {/* Header */}
+    <div className="flex justify-between items-center border-b p-4">
 
-        <button
-              onClick={handleDownloadImage}
-              className="
-                bg-blue-600
-                hover:bg-blue-700
-                text-white
-                p-2
-                rounded-lg
-                transition
-              "
-              title="Download Image">
-              <FiDownload size={20} />
-      </button>
+      <h2 className="text-xl font-bold">
+        Image {currentImageIndex + 1} / {selectedViewImages.length}
+      </h2>
+
+      <div className="flex gap-3">
 
         <button
-          onClick={() => setSelectedViewImage(null)}
-          className="bg-red-600 text-white px-3 py-1 rounded"
+          onClick={handleDownloadImage}
+          className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg"
+        >
+          <FiDownload size={20}/>
+        </button>
+
+        <button
+          onClick={() => {
+            setSelectedViewImages([]);
+            setCurrentImageIndex(0);
+          }}
+          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
         >
           Close
         </button>
 
       </div>
 
+    </div>
+
+    {/* Image */}
+
+    <div className="h-[65vh] flex items-center justify-center bg-gray-50 p-6">
+
       <img
-        src={selectedViewImage}
+        src={selectedViewImages[currentImageIndex]}
         alt="Report"
-        className="max-w-full max-h-[65vh] rounded"
+        className="max-w-full max-h-full object-contain rounded-xl shadow"
       />
 
     </div>
 
+    {/* Footer */}
+    <div className="flex justify-center gap-4 p-4 border-t">
+
+      <button
+        disabled={currentImageIndex === 0}
+        onClick={() =>
+          setCurrentImageIndex(currentImageIndex - 1)
+        }
+        className="bg-gray-600 text-white px-5 py-2 rounded-lg disabled:opacity-40"
+      >
+        Previous
+      </button>
+
+      <button
+        disabled={
+          currentImageIndex ===
+          selectedViewImages.length - 1
+        }
+        onClick={() =>
+          setCurrentImageIndex(currentImageIndex + 1)
+        }
+        className="bg-blue-600 text-white px-5 py-2 rounded-lg disabled:opacity-40"
+      >
+        Next
+      </button>
+
+    </div>
+
   </div>
+
+</div>
 
 )}
 
