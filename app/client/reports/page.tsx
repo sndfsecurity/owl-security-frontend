@@ -874,7 +874,7 @@ if (selectedImages.length === 0) return;
 )}
 
 
-    </ClientLayout>
+</ClientLayout>
   );
 }   // <-- THIS MUST EXIST
 

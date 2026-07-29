@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef} from "react";
 import { useParams } from "next/navigation";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
@@ -41,6 +41,15 @@ export default function ClientReportsPage() {
 
   const [selectedVideo, setSelectedVideo] =
   useState<File | null>(null);
+
+  const imageGalleryRef = useRef<HTMLInputElement>(null);
+  const imageCameraRef = useRef<HTMLInputElement>(null);
+
+  const videoGalleryRef = useRef<HTMLInputElement>(null);
+  const videoCameraRef = useRef<HTMLInputElement>(null);
+
+  const [showImageOptions, setShowImageOptions] = useState(false);
+  const [showVideoOptions, setShowVideoOptions] = useState(false);
 
   const [selectedViewImages, setSelectedViewImages] =
   useState<string[]>([]);
@@ -270,6 +279,125 @@ const handleDownloadImage = async () => {
 
   return (
     <DashboardLayout>
+
+    {/* hidden inputs */}
+
+      {/* Hidden Gallery Image Input */}
+
+<input
+  ref={imageGalleryRef}
+  type="file"
+  accept="image/*"
+  multiple
+  hidden
+  onChange={(e) => {
+
+    const files = Array.from(
+      e.target.files || []
+    );
+
+    setSelectedImages((prev) => {
+
+      const updated = [
+        ...prev,
+        ...files
+      ];
+
+      if (updated.length > 3) {
+
+        alert("Maximum 3 images allowed");
+
+        return prev;
+
+      }
+
+      return updated;
+
+    });
+
+    e.target.value = "";
+
+  }}
+/>
+
+{/* Hidden Camera Image Input */}
+
+<input
+  ref={imageCameraRef}
+  type="file"
+  accept="image/*"
+  capture="environment"
+  multiple
+  hidden
+  onChange={(e) => {
+
+    const files = Array.from(
+      e.target.files || []
+    );
+
+    setSelectedImages((prev) => {
+
+      const updated = [
+        ...prev,
+        ...files
+      ];
+
+      if (updated.length > 3) {
+
+        alert("Maximum 3 images allowed");
+
+        return prev;
+
+      }
+
+      return updated;
+
+    });
+
+    e.target.value = "";
+
+  }}
+/>
+
+{/* Hidden Gallery Video Input */}
+
+<input
+  ref={videoGalleryRef}
+  type="file"
+  accept="video/*"
+  hidden
+  onChange={(e) => {
+
+    setSelectedVideo(
+      e.target.files?.[0] || null
+    );
+
+    e.target.value = "";
+
+  }}
+/>
+
+{/* Hidden Camera Video Input */}
+
+<input
+  ref={videoCameraRef}
+  type="file"
+  accept="video/*"
+  capture="environment"
+  hidden
+  onChange={(e) => {
+
+    setSelectedVideo(
+      e.target.files?.[0] || null
+    );
+
+    e.target.value = "";
+
+  }}
+/>
+
+
+
       <h1 className="text-3xl font-bold mb-6 mt-5">
         {client?.companyName} Reports
       </h1>
@@ -367,6 +495,8 @@ const handleDownloadImage = async () => {
          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
 
   {/* Image Upload */}
+  <div className="hidden md:block">
+
   <div>
     <label className="block font-semibold text-slate-700 mb-2">
       📷 Report Image
@@ -413,6 +543,31 @@ const handleDownloadImage = async () => {
           "/>
 
   </div>
+
+  </div>
+
+  <div className="md:hidden">
+
+<label className="block font-semibold text-slate-700 mb-2">
+📷 Report Image
+</label>
+
+<button
+type="button"
+onClick={() => setShowImageOptions(true)}
+className="
+w-full
+border
+border-slate-300
+rounded-xl
+p-3
+bg-white
+text-left
+">
+Upload Image
+</button>
+
+</div>
 
   {/* image upload preview */}
 
@@ -475,6 +630,8 @@ const handleDownloadImage = async () => {
       
 {/* Video Upload */}
 
+<div className="hidden md:block">
+
   <div>
     <label className="block font-semibold text-slate-700 mb-2">
       🎥 Report Video
@@ -498,6 +655,31 @@ const handleDownloadImage = async () => {
       "
     />
   </div>
+
+  </div>
+
+  <div className="md:hidden">
+
+<label className="block font-semibold text-slate-700 mb-2">
+🎥 Report Video
+</label>
+
+<button
+type="button"
+onClick={() => setShowVideoOptions(true)}
+className="
+w-full
+border
+border-slate-300
+rounded-xl
+p-3
+bg-white
+text-left
+">
+Upload Video
+</button>
+
+</div>
 
 
   {/* video preview */}
@@ -1154,6 +1336,94 @@ const handleDownloadImage = async () => {
     </div>
 
   </div>
+
+)}
+
+
+{showImageOptions && (
+
+<div className="fixed inset-0 bg-black/60 flex items-end justify-center z-50 md:hidden">
+
+<div className="bg-white rounded-t-3xl w-full p-5">
+
+<h2 className="text-xl font-bold mb-5">
+Upload Image
+</h2>
+
+<button
+className="w-full bg-blue-600 text-white p-3 rounded-xl mb-3"
+onClick={()=>{
+setShowImageOptions(false);
+imageCameraRef.current?.click();
+}}
+>
+📷 Camera
+</button>
+
+<button
+className="w-full bg-green-600 text-white p-3 rounded-xl mb-3"
+onClick={()=>{
+setShowImageOptions(false);
+imageGalleryRef.current?.click();
+}}
+>
+🖼 Gallery
+</button>
+
+<button
+className="w-full bg-gray-200 p-3 rounded-xl"
+onClick={()=>setShowImageOptions(false)}
+>
+Cancel
+</button>
+
+</div>
+
+</div>
+
+)}
+
+
+{showVideoOptions && (
+
+<div className="fixed inset-0 bg-black/60 flex items-end justify-center z-50 md:hidden">
+
+<div className="bg-white rounded-t-3xl w-full p-5">
+
+<h2 className="text-xl font-bold mb-5">
+Upload Video
+</h2>
+
+<button
+className="w-full bg-purple-600 text-white p-3 rounded-xl mb-3"
+onClick={()=>{
+setShowVideoOptions(false);
+videoCameraRef.current?.click();
+}}
+>
+🎥 Record Video
+</button>
+
+<button
+className="w-full bg-green-600 text-white p-3 rounded-xl mb-3"
+onClick={()=>{
+setShowVideoOptions(false);
+videoGalleryRef.current?.click();
+}}
+>
+📁 Gallery
+</button>
+
+<button
+className="w-full bg-gray-200 p-3 rounded-xl"
+onClick={()=>setShowVideoOptions(false)}
+>
+Cancel
+</button>
+
+</div>
+
+</div>
 
 )}
    
