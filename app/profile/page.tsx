@@ -26,16 +26,8 @@ export default function ProfilePage() {
               <p className="text-sm sm:text-base text-slate-500 mt-1">
                 Welcome to OWL Security Portal
               </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400 bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm">
-                {new Date().toLocaleDateString("en-IN", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric"
-                })}
-              </span>
-            </div>
+            </div> 
+
           </div>
         </div>
 
@@ -78,22 +70,22 @@ export default function ProfilePage() {
                   </div>
                 </div>
               </div>
-
+              
               {/* Quick stats */}
-              <div className="grid grid-cols-3 gap-1 p-3 sm:p-4 bg-slate-50">
+              <div className="grid grid-cols-1 gap-1 p-3 sm:p-4 bg-slate-50">
+
                 <div className="text-center p-2">
-                  <p className="text-[10px] sm:text-xs text-slate-400 font-medium uppercase tracking-wider">Role</p>
-                  <p className="text-xs sm:text-sm font-semibold text-slate-700 mt-0.5 truncate">{profile?.role || "-"}</p>
+                  <p className="text-[10px] sm:text-xs text-slate-400 font-medium uppercase tracking-wider">
+                    Role
+                  </p>
+
+                  <p className="text-xs sm:text-sm font-semibold text-slate-700 mt-0.5 truncate">
+                    {profile?.role || "-"}
+                  </p>
                 </div>
-                <div className="text-center p-2 border-l border-slate-200">
-                  <p className="text-[10px] sm:text-xs text-slate-400 font-medium uppercase tracking-wider">Status</p>
-                  <p className="text-xs sm:text-sm font-semibold text-emerald-600 mt-0.5">Active</p>
-                </div>
-                <div className="text-center p-2 border-l border-slate-200">
-                  <p className="text-[10px] sm:text-xs text-slate-400 font-medium uppercase tracking-wider">ID</p>
-                  <p className="text-xs sm:text-sm font-semibold text-slate-700 mt-0.5 truncate">#001</p>
-                </div>
+
               </div>
+
             </div>
           </div>
 
@@ -169,36 +161,45 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Additional info */}
-                <div className="mt-4 sm:mt-6 p-4 sm:p-5 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-                        Last Login
-                      </p>
-                      <p className="text-sm font-semibold text-slate-700 mt-1">
-                        {new Date().toLocaleString("en-IN", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit"
-                        })}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-                        Member Since
-                      </p>
-                      <p className="text-sm font-semibold text-slate-700 mt-1">
-                        {new Date().toLocaleDateString("en-IN", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric"
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+<div className="mt-4 sm:mt-6 p-4 sm:p-5 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
+  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    
+    <div>
+      <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+        Last Login
+      </p>
+      <p className="text-sm font-semibold text-slate-700 mt-1">
+        {profile?.lastLogin
+          ? new Date(profile.lastLogin).toLocaleString("en-IN", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "Not available"}
+      </p>
+    </div>
+
+    <div>
+      <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+        Member Since
+      </p>
+      <p className="text-sm font-semibold text-slate-700 mt-1">
+        {profile?.createdAt
+          ? new Date(profile.createdAt).toLocaleDateString("en-IN", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })
+          : "Not available"}
+      </p>
+    </div>
+
+  </div>
+</div>
+
+
               </div>
             </div>
           </div>

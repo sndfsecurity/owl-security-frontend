@@ -45,28 +45,43 @@ export default function ClientProfilePage() {
   }, []);
 
   const handleUpdate = async () => {
-    try {
-      await updateClientProfile(client.id, {
-        ...formData,
-        status: client.status,
-        userId: client.userId,
-      });
+  // Contact Person validation
+  if (!/^[A-Za-z ]+$/.test(formData.contactPerson.trim())) {
+    alert("Contact Person should contain only letters and spaces.");
+    return;
+  }
 
-      setClient({
-        ...client,
-        ...formData,
-      });
+  // Phone Number validation
+  if (!/^\d{10}$/.test(formData.phone)) {
+    alert("Phone Number must contain exactly 10 digits.");
+    return;
+  }
 
-      alert("Profile Updated Successfully");
-      setShowEditModal(false);
-    } catch (error) {
-      console.error(error);
-      alert("Failed to update profile");
-    }
-  };
+  try {
+    await updateClientProfile(client.id, {
+      ...formData,
+      status: client.status,
+      userId: client.userId,
+    });
 
-  return (
-    <ClientLayout>
+    setClient({
+      ...client,
+      ...formData,
+    });
+
+    alert("Profile Updated Successfully");
+    setShowEditModal(false);
+  } catch (error) {
+    console.error(error);
+    alert("Failed to update profile");
+  }
+};
+
+return (
+
+<ClientLayout>
+
+
 <div className="min-h-screen bg-slate-50 p-4 md:p-6 mt-10">        
         {/* Header */}
         <div className="mb-6 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
@@ -228,16 +243,21 @@ export default function ClientProfilePage() {
                   </label>
 
                   <input
-                    type="text"
-                    value={formData.contactPerson}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        contactPerson: e.target.value,
-                      })
-                    }
-                    className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      type="text"
+                      value={formData.contactPerson}
+                      onChange={(e) => {
+                        const value = e.target.value;
+
+                        if (/^[A-Za-z ]*$/.test(value)) {
+                          setFormData({
+                            ...formData,
+                            contactPerson: value,
+                          });
+                        }
+                      }}
+                      className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+
                 </div>
 
                 <div>
@@ -259,16 +279,23 @@ export default function ClientProfilePage() {
                   </label>
 
                   <input
-                    type="text"
-                    value={formData.phone}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        phone: e.target.value,
-                      })
-                    }
-                    className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                      type="text"
+                      value={formData.phone}
+                      maxLength={10}
+                      inputMode="numeric"
+                      onChange={(e) => {
+                        const value = e.target.value;
+
+                        if (/^\d*$/.test(value) && value.length <= 10) {
+                          setFormData({
+                            ...formData,
+                            phone: value,
+                          });
+                        }
+                      }}
+                      className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+
                 </div>
 
               </div>

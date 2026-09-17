@@ -30,6 +30,8 @@ export default function LoginPage() {
       localStorage.setItem("name", response.name);
       localStorage.setItem("userId", response.userId);
       localStorage.setItem("email", email);
+      localStorage.setItem("createdAt", response.createdAt);
+      localStorage.setItem("lastLogin", response.lastLogin);
 
       if (response.role === "ADMIN") {
         window.location.href = "/dashboard";
