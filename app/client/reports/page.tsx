@@ -306,33 +306,31 @@ if (selectedImages.length === 0) return;
 </div>
 
 <div className="bg-white p-4 rounded-xl shadow mb-4 flex flex-wrap gap-3">
+
   <input
     type="date"
     value={fromDate}
     onChange={(e) => setFromDate(e.target.value)}
-    className="w-full min-w-0 border border-slate-200 p-2 rounded text-sm text-slate-700 bg-white [color-scheme:light]"
-  />
+    className="border p-2 rounded"/>
 
   <input
     type="date"
     value={toDate}
     onChange={(e) => setToDate(e.target.value)}
-    className="w-full min-w-0 border border-slate-200 p-2 rounded text-sm text-slate-700 bg-white [color-scheme:light]"
-  />
+    className="border p-2 rounded"/>
 
   <button
     onClick={handleSearch}
-    className="bg-blue-600 text-white px-4 py-2 rounded"
-  >
+    className="bg-blue-600 text-white px-4 py-2 rounded">
     Search
   </button>
 
   <button
     onClick={handleClear}
-    className="bg-gray-500 text-white px-4 py-2 rounded"
-  >
+    className="bg-gray-500 text-white px-4 py-2 rounded">
     Clear
   </button>
+
 </div>
 
 
