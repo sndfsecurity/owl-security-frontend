@@ -151,29 +151,33 @@ export default function ReportsPage() {
                   ))}
                 </select>
 
-                <div className="relative min-w-0">
-                      <input
-                        type="date"
-                        value={fromDate}
-                        onChange={(e) => setFromDate(e.target.value)}
-                        className="w-full min-w-0 border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-transparent relative z-10"
-                      />
-                      {!fromDate && (
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm pointer-events-none md:hidden">
-                          dd-mm-yyyy
-                        </span>
-                      )}
-                </div>
+                <div className="relative">
+                    <input
+                      type="date"
+                      value={fromDate}
+                      onChange={(e) => setFromDate(e.target.value)}
+                      className={`w-full border border-slate-200 rounded-xl px-4 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        !fromDate ? "date-empty" : ""
+                      }`}
+                    />
+                    {!fromDate && (
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-500 pointer-events-none">
+                        dd-mm-yyyy
+                      </span>
+                    )}
+                  </div>
 
-                 <div className="relative min-w-0">
+                  <div className="relative">
                     <input
                       type="date"
                       value={toDate}
                       onChange={(e) => setToDate(e.target.value)}
-                      className="w-full min-w-0 border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-transparent relative z-10"
+                      className={`w-full border border-slate-200 rounded-xl px-4 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        !toDate ? "date-empty" : ""
+                      }`}
                     />
                     {!toDate && (
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm pointer-events-none md:hidden">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-500 pointer-events-none">
                         dd-mm-yyyy
                       </span>
                     )}
@@ -538,6 +542,15 @@ export default function ReportsPage() {
       </div>
 
       <style jsx>{`
+
+          .date-empty::-webkit-datetime-edit {
+            color: transparent;
+          }
+
+          .date-empty::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+          }
+
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
