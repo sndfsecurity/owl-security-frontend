@@ -142,3 +142,7 @@ body {
     @apply font-sans;
   }
 }
+
+input.date-empty::-webkit-datetime-edit {
+  color: transparent;
+}

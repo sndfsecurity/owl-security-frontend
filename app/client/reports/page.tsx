@@ -307,27 +307,51 @@ if (selectedImages.length === 0) return;
 
 <div className="bg-white p-4 rounded-xl shadow mb-4 flex flex-wrap gap-3">
 
-  <input
-    type="date"
-    value={fromDate}
-    onChange={(e) => setFromDate(e.target.value)}
-    className="border p-2 rounded"/>
+  <div className="relative">
+    <input
+      type="date"
+      value={fromDate}
+      onChange={(e) => setFromDate(e.target.value)}
+      className={`border p-2 rounded ${
+        !fromDate ? "date-empty" : ""
+      }`}
+    />
 
-  <input
-    type="date"
-    value={toDate}
-    onChange={(e) => setToDate(e.target.value)}
-    className="border p-2 rounded"/>
+    {!fromDate && (
+      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500 pointer-events-none">
+        dd-mm-yyyy
+      </span>
+    )}
+  </div>
+
+  <div className="relative">
+    <input
+      type="date"
+      value={toDate}
+      onChange={(e) => setToDate(e.target.value)}
+      className={`border p-2 rounded ${
+        !toDate ? "date-empty" : ""
+      }`}
+    />
+
+    {!toDate && (
+      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500 pointer-events-none">
+        dd-mm-yyyy
+      </span>
+    )}
+  </div>
 
   <button
     onClick={handleSearch}
-    className="bg-blue-600 text-white px-4 py-2 rounded">
+    className="bg-blue-600 text-white px-4 py-2 rounded"
+  >
     Search
   </button>
 
   <button
     onClick={handleClear}
-    className="bg-gray-500 text-white px-4 py-2 rounded">
+    className="bg-gray-500 text-white px-4 py-2 rounded"
+  >
     Clear
   </button>
 
