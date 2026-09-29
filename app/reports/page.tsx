@@ -6,13 +6,14 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { getReports, getReportsByDateRange, downloadImage } from "@/services/reportService";
 import { getClients } from "@/services/clientService";
 import { FiDownload } from "react-icons/fi";
-
+import NotesViewer from "@/components/NotesViewer";
 import dynamic from "next/dynamic";
 
 const PdfViewer = dynamic(
   () => import("@/components/PdfViewer"),
   { ssr: false }
 );
+
 
 export default function ReportsPage() {
   const [reports, setReports] = useState<any[]>([]);
@@ -53,6 +54,9 @@ export default function ReportsPage() {
   useEffect(() => {
     loadReports(page);
   }, [page]);
+
+  const getPlainText = (html: string) =>
+  html.replace(/<[^>]*>/g, "").trim();
 
   const getClientName = (clientId: number) => {
     const client = clients.find((c) => c.id === clientId);
@@ -277,15 +281,18 @@ export default function ReportsPage() {
                     {/* Notes with Read More */}
 
                     <div className="mb-4">
-                      <p className="text-xs text-slate-400 font-medium mb-1">Notes</p>
+                      <p className="text-xs text-slate-400 font-medium mb-1">
+                        Notes
+                      </p>
 
                       {report.notes ? (
                         <>
-                          <p className="text-sm text-slate-700 line-clamp-2">
-                            {report.notes}
+                          <p className="text-sm text-slate-700 line-clamp-2 break-words">
+                            {getPlainText(report.notes).substring(0, 100)}
+                            {getPlainText(report.notes).length > 100 && "..."}
                           </p>
 
-                          {report.notes.length > 50 && (
+                          {getPlainText(report.notes).length > 100 && (
                             <button
                               onClick={() => setSelectedNotes(report.notes)}
                               className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
@@ -395,21 +402,21 @@ export default function ReportsPage() {
                       <td className="p-4 max-w-[200px]">
                         <div className="break-words text-sm text-slate-600">
                           {report.notes
-                            ? report.notes.substring(0, 50)
+                            ? getPlainText(report.notes).substring(0, 50)
                             : !report.pdfUrl
                             ? "No Notes"
                             : ""}
-                          {report.notes && report.notes.length > 50 && "..."}
+                          {report.notes && getPlainText(report.notes).length > 50 && "..."}
                         </div>
 
-                        {report.notes && report.notes.length > 50 && (
-                          <button
-                            onClick={() => setSelectedNotes(report.notes)}
-                            className="mt-1 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
-                          >
-                            Read More
-                          </button>
-                        )}
+                       {report.notes && getPlainText(report.notes).length > 50 && (
+                            <button
+                              onClick={() => setSelectedNotes(report.notes)}
+                              className="mt-1 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                            >
+                              Read More
+                            </button>
+                          )}
 
                         {report.pdfUrl && (
                           <button
@@ -575,11 +582,11 @@ export default function ReportsPage() {
                   Close
                 </button>
               </div>
-              <div className="p-4 max-h-[60vh] overflow-y-auto">
-                <p className="text-slate-700 whitespace-pre-wrap text-base leading-7">
-                  {selectedNotes}
-                </p>
+             
+             <div className="p-4 max-h-[60vh] overflow-y-auto">
+                <NotesViewer content={selectedNotes} />
               </div>
+
             </div>
           </div>
         )}

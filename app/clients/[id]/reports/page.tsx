@@ -1,6 +1,7 @@
 // app/clients/[id]/reports/page.tsx
 "use client";
 
+import NotesViewer from "@/components/NotesViewer";
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -22,6 +23,14 @@ const PdfViewer = dynamic(
   () => import("@/components/PdfViewer"),
   { ssr: false }
 );
+
+const NotesEditor = dynamic(
+  () => import("@/components/NotesEditor"),
+  { ssr: false }
+);
+
+const getPlainText = (html: string) =>
+  html.replace(/<[^>]*>/g, "").trim();
 
 export default function ClientReportsPage() {
   const params = useParams();
@@ -340,17 +349,18 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
                   <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider block mb-1.5">
                     Report Notes
                   </label>
-                  <textarea
-                    value={reportData.notes}
-                    onChange={(e) =>
-                      setReportData({ ...reportData, notes: e.target.value })
-                    }
-                    className="w-full border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    rows={4}
-                    placeholder="Write report notes..."
-                  />
 
-                  <div className="mt-3">
+                  <NotesEditor
+                      value={reportData.notes}
+                      onChange={(value) =>
+                        setReportData((prev) => ({
+                          ...prev,
+                          notes: value,
+                        }))
+                      }
+                    />
+
+                    <div className="mt-3">
                       <p className="text-xs text-slate-500 mb-2">
                         Or attach a formatted report (PDF, maximum 10 MB)
                       </p>
@@ -600,15 +610,15 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
                       </span>
                     </td>
 
-                     <td className="p-4 max-w-[200px]">
+                    <td className="p-4 max-w-[200px]">
                           {report.notes && (
                             <>
                               <div className="break-words text-sm text-slate-600">
-                                {report.notes.substring(0, 50)}
-                                {report.notes.length > 50 && "..."}
+                                {getPlainText(report.notes).substring(0, 50)}
+                                {getPlainText(report.notes).length > 50 && "..."}
                               </div>
 
-                              {report.notes.length > 50 && (
+                              {getPlainText(report.notes).length > 50 && (
                                 <button
                                   onClick={() => setSelectedNotes(report.notes)}
                                   className="mt-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
@@ -712,22 +722,42 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
                   </span>
                 </div>
 
-                <div>
-                    <span className="text-xs text-slate-400 block mb-1">Notes</span>
+               <div>
+                  <span className="text-xs text-slate-400 block mb-1">
+                    Notes
+                  </span>
 
-                    <p className="text-sm text-slate-700 break-words">
-                      {report.notes || (!report.pdfUrl ? "No Notes" : "")}
+                  {report.notes ? (
+                    <div>
+                      <p className="text-sm text-slate-700 break-words">
+                        {getPlainText(report.notes).substring(0, 100)}
+                        {getPlainText(report.notes).length > 100 && "..."}
+                      </p>
+
+                      {getPlainText(report.notes).length > 100 && (
+                        <button
+                          onClick={() => setSelectedNotes(report.notes)}
+                          className="mt-1 text-xs text-blue-600 hover:text-blue-700 font-semibold"
+                        >
+                          Read More
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-700">
+                      {!report.pdfUrl ? "No Notes" : ""}
                     </p>
+                  )}
 
-                    {report.pdfUrl && (
-                      <button
-                        onClick={() => setSelectedViewPdf(report.pdfUrl)}
-                        className="mt-2 flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-semibold"
-                      >
-                        📄 View PDF
-                      </button>
-                    )}
-                  </div>
+                  {report.pdfUrl && (
+                    <button
+                      onClick={() => setSelectedViewPdf(report.pdfUrl)}
+                      className="mt-2 flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-semibold"
+                    >
+                      📄 View PDF
+                    </button>
+                  )}
+                </div>
 
                 <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
                   {report.imageUrls && report.imageUrls.length > 0 && (
@@ -879,9 +909,9 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
                 </button>
               </div>
               <div className="p-4 max-h-[60vh] overflow-y-auto">
-                <p className="text-slate-700 whitespace-pre-wrap text-base leading-7">
-                  {selectedNotes}
-                </p>
+                
+               <NotesViewer content={selectedNotes} />
+
               </div>
             </div>
           </div>

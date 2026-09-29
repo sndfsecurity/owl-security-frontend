@@ -3,6 +3,8 @@ import { Suspense } from "react";
 
 import dynamic from "next/dynamic";
 
+import NotesViewer from "@/components/NotesViewer";
+
 const PdfViewer = dynamic(
   () => import("@/components/PdfViewer"),
   { ssr: false }
@@ -54,6 +56,9 @@ useState<string | null>(null);
 const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
 
 const searchParams = useSearchParams();
+
+const getPlainText = (html: string) =>
+  html.replace(/<[^>]*>/g, "").trim();
 
 const statusFilter =
   searchParams.get("status");
@@ -426,19 +431,18 @@ if (selectedImages.length === 0) return;
     {report.priority}
   </td>
 
+  
   <td className="p-3">
+  {report.notes ? (
+    <>
+      <span>
+        {getPlainText(report.notes).substring(0, 50)}
+        {getPlainText(report.notes).length > 50 ? "..." : ""}
+      </span>
 
-            {report.notes &&
-            report.notes.length > 80 ? (
-              <>
-                <span>
-                  {report.notes.substring(0, 50)}...
-                </span>
-
-                <button
-          onClick={() =>
-            setSelectedNote(report.notes)
-          }
+      {getPlainText(report.notes).length > 50 && (
+        <button
+          onClick={() => setSelectedNote(report.notes)}
           className="
             ml-2
             bg-green-600
@@ -451,69 +455,25 @@ if (selectedImages.length === 0) return;
             font-semibold
             shadow-md
             transition-all
-            duration-200 ">    
+            duration-200
+          "
+        >
           Read More
         </button>
-              </>
-            ) : (
-              report.notes || "No Notes"
-            )}
-
-
-            {report.pdfUrl && (
-              <button
-                onClick={() => setSelectedPdf(report.pdfUrl)}
-                className="mt-1 block text-xs font-semibold text-red-600 hover:text-red-700"
-              >
-                📄 View PDF
-              </button>
-            )}
-
-  </td>
-
-  <td className="p-3">
-
-  <div className="flex gap-2">
-
-    {report.imageUrls?.length > 0 && (
-
-        <button
-          onClick={() => {
-            setSelectedImages(report.imageUrls);
-            setCurrentImageIndex(0);
-          }}
-          className="bg-blue-600 text-white px-3 py-1 rounded">
-          View Image
-          {report.imageUrls.length > 1
-            ? ` (${report.imageUrls.length})`
-            : ""}
-        </button>
-
       )}
+    </>
+  ) : (
+    <span>No Notes</span>
+  )}
 
-      
-      {report.videoUrl && (
-
-        <button
-          onClick={() =>
-            setSelectedVideo(report.videoUrl)
-          }
-          className="bg-purple-600 text-white px-3 py-1 rounded"
-        >
-          Play Video
-        </button>
-
-      )}
-
-      {!report.imageUrls?.length && !report.videoUrl && (
-
-        <span>No Attachment</span>
-
-      )}
-    
-
-  </div>
-
+  {report.pdfUrl && (
+    <button
+      onClick={() => setSelectedPdf(report.pdfUrl)}
+      className="mt-1 block text-xs font-semibold text-red-600 hover:text-red-700"
+    >
+      📄 View PDF
+    </button>
+  )}
 </td>
 
 </tr>
@@ -594,61 +554,57 @@ if (selectedImages.length === 0) return;
 
         </div>
 
-        {/* Notes Section */}
-        <div className="bg-slate-50 rounded-xl p-3 mb-3">
+       
+       {/* Notes Section */}
+<div className="bg-slate-50 rounded-xl p-3 mb-3">
+  <p className="text-xs text-gray-500 mb-1">
+    Notes
+  </p>
 
-          <p className="text-xs text-gray-500 mb-1">
-            Notes
-          </p>
+  {report.notes ? (
+    <>
+      <p className="text-sm text-gray-700 break-words">
+        {getPlainText(report.notes).substring(0, 100)}
+        {getPlainText(report.notes).length > 100 ? "..." : ""}
+      </p>
 
-          {report.notes &&
-          report.notes.length > 120 ? (
+      {getPlainText(report.notes).length > 100 && (
+        <button
+          onClick={() => setSelectedNote(report.notes)}
+          className="
+            mt-3
+            bg-green-600
+            hover:bg-green-700
+            text-white
+            px-4
+            py-2
+            rounded-xl
+            text-sm
+            font-semibold
+            shadow-md
+            transition-all
+            duration-200
+          "
+        >
+          Read More
+        </button>
+      )}
+    </>
+  ) : (
+    <p className="text-sm text-gray-700 break-words">
+      No Notes
+    </p>
+  )}
 
-            <>
-              <p className="text-sm text-gray-700 break-words">
-                {report.notes.substring(0, 120)}...
-              </p>
-
-              <button
-                onClick={() =>
-                  setSelectedNote(report.notes)
-                }
-                className="
-                  mt-3
-                  bg-green-600
-                  hover:bg-green-700
-                  text-white
-                  px-4
-                  py-2
-                  rounded-xl
-                  text-sm
-                  font-semibold
-                  shadow-md
-                  transition-all
-                  duration-200">
-                Read More
-              </button>
-            </>
-
-          ) : (
-
-            <p className="text-sm text-gray-700 break-words">
-              {report.notes || "No Notes"}
-            </p>
-
-          )}
-
-
-          {report.pdfUrl && (
-            <button
-              onClick={() => setSelectedPdf(report.pdfUrl)}
-              className="mt-2 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-lg transition-all"
-            >
-              📄 View PDF
-            </button>
-          )}
-
-        </div>
+  {report.pdfUrl && (
+    <button
+      onClick={() => setSelectedPdf(report.pdfUrl)}
+      className="mt-2 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-lg transition-all"
+    >
+      📄 View PDF
+    </button>
+  )}
+</div>
 
         {/* Image */}
         
@@ -916,9 +872,9 @@ if (selectedImages.length === 0) return;
 
       </div>
 
-      <p className="whitespace-pre-wrap">
-        {selectedNote}
-      </p>
+      <div className="max-h-[60vh] overflow-y-auto">
+        <NotesViewer content={selectedNote} />
+      </div>
 
     </div>
 
