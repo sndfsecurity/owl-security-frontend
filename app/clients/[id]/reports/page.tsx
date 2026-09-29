@@ -16,6 +16,13 @@ import {
   deleteReport,
 } from "@/services/reportService";
 
+import dynamic from "next/dynamic";
+
+const PdfViewer = dynamic(
+  () => import("@/components/PdfViewer"),
+  { ssr: false }
+);
+
 export default function ClientReportsPage() {
   const params = useParams();
   const clientId = Number(params.id);
@@ -880,48 +887,14 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
           </div>
         )}
 
-
         {/* PDF Viewer Modal */}
           {selectedViewPdf && (
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[85vh] flex flex-col animate-scaleIn">
-                <div className="flex justify-between items-center p-4 border-b gap-3">
-                  <h2 className="text-lg font-bold text-slate-800">
-                    Report PDF
-                  </h2>
-
-                  <div className="flex items-center gap-2">
-                    <a
-                      href={selectedViewPdf}
-                      download="report.pdf"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg"
-                    >
-                      <FiDownload className="inline mr-1" size={16} />
-                      Download
-                    </a>
-
-                    <button
-                      onClick={() => setSelectedViewPdf(null)}
-                      className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg"
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex-1 min-h-0 bg-slate-100">
-                  <iframe
-                    src={selectedViewPdf}
-                    title="Report PDF Preview"
-                    className="w-full h-full rounded-b-2xl"
-                  />
-                </div>
-              </div>
-            </div>
+            <PdfViewer
+              pdfUrl={selectedViewPdf}
+              onClose={() => setSelectedViewPdf(null)}
+            />
           )}
-
+                  
         {/* Image Upload Options Modal - Mobile */}
         {showImageOptions && (
           <div className="fixed inset-0 bg-black/60 flex items-end justify-center z-50 md:hidden animate-fadeIn">
