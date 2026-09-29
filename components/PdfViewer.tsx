@@ -31,6 +31,31 @@ export default function PdfViewer({
   const [scale, setScale] = useState(1);
   const [error, setError] = useState(false);
 
+  const handleDownload = async () => {
+  try {
+    const response = await fetch(pdfUrl);
+
+    if (!response.ok) {
+      throw new Error("PDF download failed");
+    }
+
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = "report.pdf";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    URL.revokeObjectURL(blobUrl);
+  } catch (error) {
+    console.error("PDF download error:", error);
+    alert("Unable to download PDF. Please try again.");
+  }
+};
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-2 backdrop-blur-sm sm:p-4">
       <div className="flex h-[95dvh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl sm:h-[85vh]">
@@ -71,18 +96,15 @@ export default function PdfViewer({
             </button>
 
             {/* Download */}
-            <a
-              href={pdfUrl}
-              download="report.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white"
-            >
-              <FiDownload size={16} />
-              <span className="hidden sm:inline">
-                Download
-              </span>
-            </a>
+            
+            <button
+                type="button"
+                onClick={handleDownload}
+                className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white"
+                >
+                <FiDownload size={16} />
+                <span className="hidden sm:inline">Download</span>
+            </button>
 
             {/* Close */}
             <button
