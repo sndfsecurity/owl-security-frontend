@@ -7,6 +7,13 @@ import { getReports, getReportsByDateRange, downloadImage } from "@/services/rep
 import { getClients } from "@/services/clientService";
 import { FiDownload } from "react-icons/fi";
 
+import dynamic from "next/dynamic";
+
+const PdfViewer = dynamic(
+  () => import("@/components/PdfViewer"),
+  { ssr: false }
+);
+
 export default function ReportsPage() {
   const [reports, setReports] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
@@ -578,32 +585,13 @@ export default function ReportsPage() {
         )}
 
         {/* PDF Viewer Modal */}
-{selectedPdf && (
-  <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4 animate-fadeIn">
-    <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-5xl h-[95dvh] sm:h-[85vh] flex flex-col min-h-0 animate-scaleIn">
-      <div className="flex justify-between items-center border-b p-3 sm:p-4 shrink-0">
-        <h2 className="text-base sm:text-lg font-bold text-slate-800">
-          PDF Report
-        </h2>
 
-        <button
-          onClick={() => setSelectedPdf(null)}
-          className="px-3 sm:px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm sm:text-base font-semibold rounded-lg transition-all"
-        >
-          Close
-        </button>
-      </div>
-
-      <div className="flex-1 min-h-0 w-full bg-slate-100 overflow-hidden">
-        <iframe
-          src={selectedPdf}
-          title="PDF Report"
-          className="block w-full h-full border-0"
-        />
-      </div>
-    </div>
-  </div>
-)}
+        {selectedPdf && (
+          <PdfViewer
+            pdfUrl={selectedPdf}
+            onClose={() => setSelectedPdf(null)}
+          />
+        )}
 
       </div>
 
