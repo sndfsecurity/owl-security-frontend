@@ -16,6 +16,8 @@ export default function ReportsPage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [selectedNotes, setSelectedNotes] = useState<string | null>(null);
+  const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
+  
 
   const [selectedClient, setSelectedClient] = useState("");
   const [fromDate, setFromDate] = useState("");
@@ -266,17 +268,35 @@ export default function ReportsPage() {
                     </div>
 
                     {/* Notes with Read More */}
+
                     <div className="mb-4">
                       <p className="text-xs text-slate-400 font-medium mb-1">Notes</p>
-                      <p className="text-sm text-slate-700 line-clamp-2">
-                        {report.notes || "No notes available"}
-                      </p>
-                      {report.notes && report.notes.length > 50 && (
+
+                      {report.notes ? (
+                        <>
+                          <p className="text-sm text-slate-700 line-clamp-2">
+                            {report.notes}
+                          </p>
+
+                          {report.notes.length > 50 && (
+                            <button
+                              onClick={() => setSelectedNotes(report.notes)}
+                              className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                            >
+                              Read More →
+                            </button>
+                          )}
+                        </>
+                      ) : !report.pdfUrl ? (
+                        <p className="text-sm text-slate-700">No Notes</p>
+                      ) : null}
+
+                      {report.pdfUrl && (
                         <button
-                          onClick={() => setSelectedNotes(report.notes)}
-                          className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                          onClick={() => setSelectedPdf(report.pdfUrl)}
+                          className="mt-2 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-lg transition-all"
                         >
-                          Read More →
+                          📄 View PDF
                         </button>
                       )}
                     </div>
@@ -364,11 +384,17 @@ export default function ReportsPage() {
                           {report.priority}
                         </span>
                       </td>
+
                       <td className="p-4 max-w-[200px]">
                         <div className="break-words text-sm text-slate-600">
-                          {report.notes ? report.notes.substring(0, 50) : "No Notes"}
+                          {report.notes
+                            ? report.notes.substring(0, 50)
+                            : !report.pdfUrl
+                            ? "No Notes"
+                            : ""}
                           {report.notes && report.notes.length > 50 && "..."}
                         </div>
+
                         {report.notes && report.notes.length > 50 && (
                           <button
                             onClick={() => setSelectedNotes(report.notes)}
@@ -377,7 +403,18 @@ export default function ReportsPage() {
                             Read More
                           </button>
                         )}
+
+                        {report.pdfUrl && (
+                          <button
+                            onClick={() => setSelectedPdf(report.pdfUrl)}
+                            className="mt-1 block text-xs font-semibold text-red-600 hover:text-red-700"
+                          >
+                            📄 View PDF
+                          </button>
+                        )}
                       </td>
+
+
                       <td className="p-4">
                         <div className="flex flex-wrap gap-2">
                           {report.imageUrls && report.imageUrls.length > 0 && (
@@ -539,6 +576,35 @@ export default function ReportsPage() {
             </div>
           </div>
         )}
+
+        {/* PDF Viewer Modal */}
+{selectedPdf && (
+  <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4 animate-fadeIn">
+    <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-5xl h-[95dvh] sm:h-[85vh] flex flex-col min-h-0 animate-scaleIn">
+      <div className="flex justify-between items-center border-b p-3 sm:p-4 shrink-0">
+        <h2 className="text-base sm:text-lg font-bold text-slate-800">
+          PDF Report
+        </h2>
+
+        <button
+          onClick={() => setSelectedPdf(null)}
+          className="px-3 sm:px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm sm:text-base font-semibold rounded-lg transition-all"
+        >
+          Close
+        </button>
+      </div>
+
+      <div className="flex-1 min-h-0 w-full bg-slate-100 overflow-hidden">
+        <iframe
+          src={selectedPdf}
+          title="PDF Report"
+          className="block w-full h-full border-0"
+        />
+      </div>
+    </div>
+  </div>
+)}
+
       </div>
 
       <style jsx>{`

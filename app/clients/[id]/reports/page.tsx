@@ -27,6 +27,11 @@ export default function ClientReportsPage() {
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
 
+const [selectedPdf, setSelectedPdf] = useState<File | null>(null);
+const pdfInputRef = useRef<HTMLInputElement>(null);
+
+const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
+
   const imageGalleryRef = useRef<HTMLInputElement>(null);
   const imageCameraRef = useRef<HTMLInputElement>(null);
   const videoGalleryRef = useRef<HTMLInputElement>(null);
@@ -83,20 +88,29 @@ export default function ClientReportsPage() {
         videoUrl = await uploadVideo(selectedVideo);
       }
 
-      await createReport({
-        clientId: clientId,
-        reportDate: "",
-        reportTime: "",
-        status: reportData.status,
-        priority: reportData.priority,
-        notes: reportData.notes,
-        imageUrls: imageUrls,
-        videoUrl: videoUrl,
-      });
+      await createReport(
+        {
+          clientId: clientId,
+          reportDate: "",
+          reportTime: "",
+          status: reportData.status,
+          priority: reportData.priority,
+          notes: reportData.notes,
+          imageUrls: imageUrls,
+          videoUrl: videoUrl,
+        },
+        selectedPdf
+      );
 
       alert("Report Saved Successfully");
       setSelectedImages([]);
       setSelectedVideo(null);
+
+      setSelectedPdf(null);
+        if (pdfInputRef.current) {
+          pdfInputRef.current.value = "";
+        }
+
       setReportData({
         reportDate: "",
         reportTime: "",
@@ -223,7 +237,26 @@ export default function ClientReportsPage() {
           }}
         />
 
-        {/* Header */}
+        <input
+              ref={pdfInputRef}
+              type="file"
+              accept=".pdf,application/pdf"
+              hidden
+              onChange={(e) => {
+                const file = e.target.files?.[0] || null;
+
+                if (file && file.size > 10 * 1024 * 1024) {
+                  alert("PDF size must not exceed 10 MB");
+                  e.target.value = "";
+                  return;
+                }
+
+                setSelectedPdf(file);
+                e.target.value = "";
+              }}
+            />
+
+                    {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
           <div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-800">
@@ -296,6 +329,7 @@ export default function ClientReportsPage() {
                 </div>
 
                 <div className="mt-4">
+
                   <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider block mb-1.5">
                     Report Notes
                   </label>
@@ -308,6 +342,72 @@ export default function ClientReportsPage() {
                     rows={4}
                     placeholder="Write report notes..."
                   />
+
+                  <div className="mt-3">
+                      <p className="text-xs text-slate-500 mb-2">
+                        Or attach a formatted report (PDF, maximum 10 MB)
+                      </p>
+
+                      {!selectedPdf ? (
+                        <button
+                          type="button"
+                          onClick={() => pdfInputRef.current?.click()}
+                          className="w-full sm:w-auto flex items-center justify-center gap-2 border-2 border-dashed border-slate-300 rounded-xl px-5 py-3 text-sm font-semibold text-slate-700 hover:border-blue-500 hover:bg-blue-50 transition-all"
+                        >
+                          <span className="text-red-600 text-lg">📄</span>
+                          Upload PDF
+                        </button>
+                      ) : (
+                        <div className="border border-slate-200 rounded-xl p-3 bg-slate-50">
+                          <div className="flex items-center gap-3">
+                            <div className="w-11 h-11 rounded-lg bg-red-100 flex items-center justify-center text-red-600 text-xl">
+                              📄
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-semibold text-slate-700 break-all">
+                                {selectedPdf.name}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {(selectedPdf.size / (1024 * 1024)).toFixed(2)} MB
+                              </p>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedPdf(null);
+                                if (pdfInputRef.current) {
+                                  pdfInputRef.current.value = "";
+                                }
+                              }}
+                              title="Remove PDF"
+                              aria-label="Remove selected PDF"
+                              className="w-8 h-8 shrink-0 rounded-full bg-red-600 hover:bg-red-700 text-white font-bold flex items-center justify-center"
+                            >
+                              ✕
+                            </button>
+                          </div>
+
+                          <div className="mt-3 border border-slate-200 rounded-lg overflow-hidden bg-white">
+                            <iframe
+                              src={URL.createObjectURL(selectedPdf)}
+                              title="PDF Preview"
+                              className="w-full h-[400px]"
+                            />
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => pdfInputRef.current?.click()}
+                            className="mt-3 text-sm font-semibold text-blue-600 hover:text-blue-700"
+                          >
+                            Choose another PDF
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
@@ -492,20 +592,36 @@ export default function ClientReportsPage() {
                         {report.priority}
                       </span>
                     </td>
-                    <td className="p-4 max-w-[200px]">
-                      <div className="break-words text-sm text-slate-600">
-                        {report.notes ? report.notes.substring(0, 50) : "No Notes"}
-                        {report.notes && report.notes.length > 50 && "..."}
-                      </div>
-                      {report.notes && report.notes.length > 50 && (
-                        <button
-                          onClick={() => setSelectedNotes(report.notes)}
-                          className="mt-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
-                        >
-                          Read More
-                        </button>
-                      )}
-                    </td>
+
+                     <td className="p-4 max-w-[200px]">
+                          {report.notes && (
+                            <>
+                              <div className="break-words text-sm text-slate-600">
+                                {report.notes.substring(0, 50)}
+                                {report.notes.length > 50 && "..."}
+                              </div>
+
+                              {report.notes.length > 50 && (
+                                <button
+                                  onClick={() => setSelectedNotes(report.notes)}
+                                  className="mt-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                                >
+                                  Read More
+                                </button>
+                              )}
+                            </>
+                          )}
+
+                          {report.pdfUrl && (
+                            <button
+                              onClick={() => setSelectedViewPdf(report.pdfUrl)}
+                              className="mt-1 flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-semibold"
+                            >
+                              📄 View PDF
+                            </button>
+                          )}
+                        </td>
+
                     <td className="p-4">
                       <div className="flex flex-wrap gap-2">
                         {report.imageUrls && report.imageUrls.length > 0 && (
@@ -588,12 +704,24 @@ export default function ClientReportsPage() {
                     {report.priority}
                   </span>
                 </div>
+
                 <div>
-                  <span className="text-xs text-slate-400 block mb-1">Notes</span>
-                  <p className="text-sm text-slate-700 break-words">
-                    {report.notes || "No Notes"}
-                  </p>
-                </div>
+                    <span className="text-xs text-slate-400 block mb-1">Notes</span>
+
+                    <p className="text-sm text-slate-700 break-words">
+                      {report.notes || (!report.pdfUrl ? "No Notes" : "")}
+                    </p>
+
+                    {report.pdfUrl && (
+                      <button
+                        onClick={() => setSelectedViewPdf(report.pdfUrl)}
+                        className="mt-2 flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-semibold"
+                      >
+                        📄 View PDF
+                      </button>
+                    )}
+                  </div>
+
                 <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
                   {report.imageUrls && report.imageUrls.length > 0 && (
                     <button
@@ -751,6 +879,48 @@ export default function ClientReportsPage() {
             </div>
           </div>
         )}
+
+
+        {/* PDF Viewer Modal */}
+          {selectedViewPdf && (
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[85vh] flex flex-col animate-scaleIn">
+                <div className="flex justify-between items-center p-4 border-b gap-3">
+                  <h2 className="text-lg font-bold text-slate-800">
+                    Report PDF
+                  </h2>
+
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={selectedViewPdf}
+                      download="report.pdf"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg"
+                    >
+                      <FiDownload className="inline mr-1" size={16} />
+                      Download
+                    </a>
+
+                    <button
+                      onClick={() => setSelectedViewPdf(null)}
+                      className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex-1 min-h-0 bg-slate-100">
+                  <iframe
+                    src={selectedViewPdf}
+                    title="Report PDF Preview"
+                    className="w-full h-full rounded-b-2xl"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
         {/* Image Upload Options Modal - Mobile */}
         {showImageOptions && (

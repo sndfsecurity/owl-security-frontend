@@ -54,32 +54,44 @@ export async function getReportsByClientId(
   return response.json();
 }
 
+
 export async function createReport(
-  reportData: any
+  reportData: any,
+  pdfFile?: File | null
 ) {
   const token = localStorage.getItem("token");
+
+  const formData = new FormData();
+
+  formData.append(
+    "request",
+    new Blob(
+      [JSON.stringify(reportData)],
+      { type: "application/json" }
+    )
+  );
+
+  if (pdfFile) {
+    formData.append("pdf", pdfFile);
+  }
 
   const response = await fetch(
     `${API_BASE_URL}/api/reports`,
     {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(reportData),
+      body: formData,
     }
   );
 
   if (!response.ok) {
-    throw new Error(
-      "Failed to create report"
-    );
+    throw new Error(await response.text());
   }
 
   return response.json();
 }
-
 
 export async function
 getReportsByDate(

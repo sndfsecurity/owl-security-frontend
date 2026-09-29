@@ -45,6 +45,8 @@ import { FiDownload } from "react-icons/fi";
 const [selectedNote, setSelectedNote] =
 useState<string | null>(null);
 
+const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
+
 const searchParams = useSearchParams();
 
 const statusFilter =
@@ -420,36 +422,46 @@ if (selectedImages.length === 0) return;
 
   <td className="p-3">
 
-    {report.notes &&
-     report.notes.length > 80 ? (
-      <>
-        <span>
-          {report.notes.substring(0, 50)}...
-        </span>
+            {report.notes &&
+            report.notes.length > 80 ? (
+              <>
+                <span>
+                  {report.notes.substring(0, 50)}...
+                </span>
 
-        <button
-  onClick={() =>
-    setSelectedNote(report.notes)
-  }
-  className="
-    ml-2
-    bg-green-600
-    hover:bg-green-700
-    text-white
-    px-4
-    py-2
-    rounded-lg
-    text-sm
-    font-semibold
-    shadow-md
-    transition-all
-    duration-200 ">    
-  Read More
-</button>
-      </>
-    ) : (
-      report.notes || "No Notes"
-    )}
+                <button
+          onClick={() =>
+            setSelectedNote(report.notes)
+          }
+          className="
+            ml-2
+            bg-green-600
+            hover:bg-green-700
+            text-white
+            px-4
+            py-2
+            rounded-lg
+            text-sm
+            font-semibold
+            shadow-md
+            transition-all
+            duration-200 ">    
+          Read More
+        </button>
+              </>
+            ) : (
+              report.notes || "No Notes"
+            )}
+
+
+            {report.pdfUrl && (
+              <button
+                onClick={() => setSelectedPdf(report.pdfUrl)}
+                className="mt-1 block text-xs font-semibold text-red-600 hover:text-red-700"
+              >
+                📄 View PDF
+              </button>
+            )}
 
   </td>
 
@@ -618,6 +630,16 @@ if (selectedImages.length === 0) return;
               {report.notes || "No Notes"}
             </p>
 
+          )}
+
+
+          {report.pdfUrl && (
+            <button
+              onClick={() => setSelectedPdf(report.pdfUrl)}
+              className="mt-2 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-lg transition-all"
+            >
+              📄 View PDF
+            </button>
           )}
 
         </div>
@@ -894,6 +916,35 @@ if (selectedImages.length === 0) return;
 
     </div>
 
+  </div>
+)}
+
+
+{/* PDF Viewer Modal */}
+{selectedPdf && (
+  <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4 animate-fadeIn">
+    <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-5xl h-[95dvh] sm:h-[85vh] flex flex-col min-h-0 animate-scaleIn">
+      <div className="flex justify-between items-center border-b p-3 sm:p-4 shrink-0">
+        <h2 className="text-base sm:text-lg font-bold text-slate-800">
+          PDF Report
+        </h2>
+
+        <button
+          onClick={() => setSelectedPdf(null)}
+          className="px-3 sm:px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm sm:text-base font-semibold rounded-lg transition-all"
+        >
+          Close
+        </button>
+      </div>
+
+      <div className="flex-1 min-h-0 w-full bg-slate-100 overflow-hidden">
+        <iframe
+          src={selectedPdf}
+          title="PDF Report"
+          className="block w-full h-full border-0"
+        />
+      </div>
+    </div>
   </div>
 )}
 
