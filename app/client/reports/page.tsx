@@ -411,7 +411,8 @@ if (selectedImages.length === 0) return;
 
 {reportList.map((report:any) =>( 
 
-        <tr
+<tr
+
   key={report.id}
   className="border-b hover:bg-slate-50">
 
@@ -475,6 +476,43 @@ if (selectedImages.length === 0) return;
     </button>
   )}
 </td>
+
+<td className="p-3">
+  <div className="flex flex-col gap-2">
+    {report.imageUrls?.length > 0 && (
+      <button
+        onClick={() => {
+          setSelectedImages(report.imageUrls);
+          setCurrentImageIndex(0);
+        }}
+        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap"
+      >
+        View Image
+        {report.imageUrls.length > 1
+          ? ` (${report.imageUrls.length})`
+          : ""}
+      </button>
+    )}
+
+    {report.videoUrl && (
+      <button
+        onClick={() => setSelectedVideo(report.videoUrl)}
+        className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap"
+      >
+        Play Video
+      </button>
+    )}
+
+    {!report.imageUrls?.length && !report.videoUrl && (
+      <span className="text-slate-500 text-sm">
+        No Attachment
+      </span>
+    )}
+  </div>
+</td>
+
+
+
 
 </tr>
 
