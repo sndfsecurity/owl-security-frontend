@@ -139,24 +139,28 @@ export default function PdfViewer({
                 }
               >
                 {Array.from(
-                  { length: numPages },
-                  (_, index) => (
-                    <Page
-                      key={`page_${index + 1}`}
-                      pageNumber={index + 1}
-                      scale={scale}
-                      renderTextLayer
-                      renderAnnotationLayer
-                      className="mx-auto mb-4 shadow-md"
-                      width={Math.min(
-                        typeof window !== "undefined"
-                          ? window.innerWidth - 40
-                          : 700,
-                        800
-                      )}
-                    />
-                  )
-                )}
+                    { length: numPages },
+                    (_, index) => (
+                      <div
+                        key={`page_${index + 1}`}
+                        className="mb-4 flex w-full justify-center"
+                      >
+                        <Page
+                          pageNumber={index + 1}
+                          scale={scale}
+                          renderTextLayer
+                          renderAnnotationLayer
+                          className="shadow-md"
+                          width={Math.min(
+                            typeof window !== "undefined"
+                              ? window.innerWidth - 40
+                              : 700,
+                            800
+                          )}
+                        />
+                      </div>
+                    )
+                  )}
               </Document>
             )}
           </div>

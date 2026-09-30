@@ -204,8 +204,8 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
             const files = Array.from(e.target.files || []);
             setSelectedImages((prev) => {
               const updated = [...prev, ...files];
-              if (updated.length > 3) {
-                alert("Maximum 3 images allowed");
+              if (updated.length > 5) {
+                alert("Maximum 5 images allowed");
                 return prev;
               }
               return updated;
@@ -225,8 +225,8 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
             const files = Array.from(e.target.files || []);
             setSelectedImages((prev) => {
               const updated = [...prev, ...files];
-              if (updated.length > 3) {
-                alert("Maximum 3 images allowed");
+              if (updated.length > 5) {
+                alert("Maximum 5 images allowed");
                 return prev;
               }
               return updated;
@@ -440,8 +440,8 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
                         const files = Array.from(e.target.files || []);
                         setSelectedImages((prev) => {
                           const updated = [...prev, ...files];
-                          if (updated.length > 3) {
-                            alert("Maximum 3 images allowed");
+                          if (updated.length > 5) {
+                            alert("Maximum 5 images allowed");
                             return prev;
                           }
                           return updated;
