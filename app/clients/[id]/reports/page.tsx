@@ -24,6 +24,11 @@ const PdfViewer = dynamic(
   { ssr: false }
 );
 
+const PdfPreview = dynamic(
+  () => import("@/components/PdfPreview"),
+  { ssr: false }
+);
+
 const NotesEditor = dynamic(
   () => import("@/components/NotesEditor"),
   { ssr: false }
@@ -406,13 +411,7 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
                             </button>
                           </div>
 
-                          <div className="mt-3 border border-slate-200 rounded-lg overflow-hidden bg-white">
-                            <iframe
-                              src={URL.createObjectURL(selectedPdf)}
-                              title="PDF Preview"
-                              className="w-full h-[400px]"
-                            />
-                          </div>
+                         <PdfPreview file={selectedPdf} />
 
                           <button
                             type="button"
