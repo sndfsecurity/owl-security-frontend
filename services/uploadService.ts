@@ -28,25 +28,21 @@ export async function uploadImages(files: File[]) {
   return response.json();
 }
 
-
-export async function uploadVideo(file: File) {
-
+export async function uploadVideo(
+  file: File,
+  removeAudio: boolean = false
+) {
   const token = localStorage.getItem("token");
-
   const formData = new FormData();
 
   formData.append("file", file);
+  formData.append("removeAudio", String(removeAudio));
 
-  const response = await fetch(
-    `${API_BASE_URL}/api/upload/video`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData,
-    }
-  );
+  const response = await fetch(`${API_BASE_URL}/api/upload/video`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
 
   if (!response.ok) {
     throw new Error("Failed to upload video");

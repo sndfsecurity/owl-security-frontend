@@ -55,8 +55,10 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
 
   const imageGalleryRef = useRef<HTMLInputElement>(null);
   const imageCameraRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const videoGalleryRef = useRef<HTMLInputElement>(null);
   const videoCameraRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   const [showImageOptions, setShowImageOptions] = useState(false);
   const [showVideoOptions, setShowVideoOptions] = useState(false);
@@ -65,6 +67,9 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
   const [selectedViewVideo, setSelectedViewVideo] = useState<string | null>(null);
   const [selectedNotes, setSelectedNotes] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [removeAudio, setRemoveAudio] = useState(false);
+
 
   const [reportData, setReportData] = useState({
     reportDate: "",
@@ -93,6 +98,23 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
     }
   };
 
+  const clearSelectedVideo = () => {
+  setSelectedVideo(null);
+  setRemoveAudio(false);
+
+  if (videoInputRef.current) {
+    videoInputRef.current.value = "";
+  }
+
+  if (videoGalleryRef.current) {
+    videoGalleryRef.current.value = "";
+  }
+
+  if (videoCameraRef.current) {
+    videoCameraRef.current.value = "";
+  }
+};
+
   const handleSubmit = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
@@ -106,7 +128,7 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
       }
 
       if (selectedVideo) {
-        videoUrl = await uploadVideo(selectedVideo);
+        videoUrl = await uploadVideo(selectedVideo, removeAudio);
       }
 
       await createReport(
@@ -189,6 +211,8 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
       alert("Download failed");
     }
   };
+
+  
 
   return (
     <DashboardLayout>
@@ -277,7 +301,8 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
               }}
             />
 
-                    {/* Header */}
+      {/* Header */}
+
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
           <div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-800">
@@ -434,6 +459,7 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
                     </label>
                     <input
                       type="file"
+                      ref={imageInputRef}
                       accept="image/*"
                       multiple
                       onChange={(e) => {
@@ -477,9 +503,15 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
                           />
                           <button
                             type="button"
-                            onClick={() =>
-                              setSelectedImages(selectedImages.filter((_, i) => i !== index))
-                            }
+                             
+                            onClick={() => {
+                              setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+
+                              if (imageInputRef.current) {
+                                imageInputRef.current.value = "";
+                              }
+                            }}
+
                             className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-600 hover:bg-red-700 text-white text-sm font-bold flex items-center justify-center shadow-md"
                           >
                             ✕
@@ -495,6 +527,7 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
                       🎥 Report Video
                     </label>
                     <input
+                      ref={videoInputRef}
                       type="file"
                       accept="video/*"
                       onChange={(e) => setSelectedVideo(e.target.files?.[0] || null)}
@@ -517,20 +550,41 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
                   </div>
 
                   {/* Video Preview */}
-                  {selectedVideo && (
-                    <div className="relative mt-3 col-span-2">
-                      <video controls className="w-full max-w-xs rounded-lg border-2 border-slate-200">
-                        <source src={URL.createObjectURL(selectedVideo)} />
-                      </video>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedVideo(null)}
-                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-600 hover:bg-red-700 text-white text-sm font-bold flex items-center justify-center shadow-md"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  )}
+                 
+                    {selectedVideo && (
+                      <div className="relative col-span-2 mt-3 w-full min-w-0">
+                        <div className="relative w-full max-w-xs">
+                          <video
+                            controls
+                            className="block w-full rounded-lg border-2 border-slate-200"
+                          >
+                            <source src={URL.createObjectURL(selectedVideo)} />
+                          </video>
+
+                          {/* Remove Video Button */}
+                          <button
+                            type="button"
+                            onClick={clearSelectedVideo}
+                            aria-label="Remove selected video"
+                            className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-sm font-bold text-white shadow-md transition-colors hover:bg-red-700"
+                          >
+                            ✕
+                          </button>
+                        </div>
+
+                        {/* Remove Audio Checkbox */}
+                        <label className="mt-3 flex w-fit cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={removeAudio}
+                            onChange={(e) => setRemoveAudio(e.target.checked)}
+                            className="h-4 w-4 shrink-0 accent-blue-600"
+                          />
+                          <span>Remove Audio</span>
+                        </label>
+                      </div>
+                    )}
+
                 </div>
 
                 <div className="mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
