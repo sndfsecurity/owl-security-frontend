@@ -412,7 +412,6 @@ if (selectedImages.length === 0) return;
 {reportList.map((report:any) =>( 
 
 <tr
-
   key={report.id}
   className="border-b hover:bg-slate-50">
 
@@ -477,6 +476,7 @@ if (selectedImages.length === 0) return;
   )}
 </td>
 
+
 <td className="p-3">
   <div className="flex flex-col gap-2">
     {report.imageUrls?.length > 0 && (
@@ -510,9 +510,6 @@ if (selectedImages.length === 0) return;
     )}
   </div>
 </td>
-
-
-
 
 </tr>
 
@@ -593,7 +590,8 @@ if (selectedImages.length === 0) return;
         </div>
 
        
-       {/* Notes Section */}
+{/* Notes Section */}
+
 <div className="bg-slate-50 rounded-xl p-3 mb-3">
   <p className="text-xs text-gray-500 mb-1">
     Notes

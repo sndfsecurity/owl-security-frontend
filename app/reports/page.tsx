@@ -548,27 +548,39 @@ export default function ReportsPage() {
         )}
 
         {/* Video Viewer Modal */}
-        {selectedVideo && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl animate-scaleIn">
-              <div className="flex justify-between items-center p-4 border-b">
-                <h2 className="text-lg font-bold text-slate-800">Video Report</h2>
-                <button
-                  onClick={() => setSelectedVideo(null)}
-                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg transition-all hover:shadow-md active:scale-95"
-                >
-                  Close
-                </button>
-              </div>
-              <div className="p-4">
-                <video controls className="w-full rounded-lg" autoPlay>
-                  <source src={selectedVideo} />
-                </video>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Video Viewer Modal */}
+{selectedVideo && (
+  <div className="fixed inset-x-0 bottom-0 top-[96px] z-[9999] flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-5">
+    <div className="flex max-h-[calc(100dvh-120px)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+      {/* Modal Header */}
+      <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 py-3 sm:px-5">
+        <h2 className="text-lg font-bold text-slate-800">
+          Video Report
+        </h2>
 
+        <button
+          type="button"
+          onClick={() => setSelectedVideo(null)}
+          className="flex shrink-0 items-center justify-center rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600"
+        >
+          Close
+        </button>
+      </div>
+
+      {/* Video */}
+      <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-black p-2 sm:p-4">
+        <video
+          controls
+          autoPlay
+          playsInline
+          className="block h-auto max-h-[calc(100dvh-220px)] w-auto max-w-full rounded-lg object-contain"
+        >
+          <source src={selectedVideo} />
+        </video>
+      </div>
+    </div>
+  </div>
+)}
         {/* Notes Viewer Modal */}
         {selectedNotes && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-fadeIn">
