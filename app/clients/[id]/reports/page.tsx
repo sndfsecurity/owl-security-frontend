@@ -7,10 +7,12 @@ import { useParams } from "next/navigation";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { FiDownload } from "react-icons/fi";
 import { getClientById } from "@/services/clientService";
+
 import {
   uploadImages,
-  uploadVideo
+  uploadVideos,
 } from "@/services/uploadService";
+
 import {
   createReport,
   getReportsByClientId,
@@ -46,12 +48,16 @@ export default function ClientReportsPage() {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
-  const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
 
-const [selectedPdf, setSelectedPdf] = useState<File | null>(null);
-const pdfInputRef = useRef<HTMLInputElement>(null);
+  const [selectedVideos, setSelectedVideos] = useState<File[]>([]);
 
-const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
+  const [selectedViewVideos, setSelectedViewVideos] = useState<string[]>([]);
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+
+  const [selectedPdf, setSelectedPdf] = useState<File | null>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
+
+  const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
 
   const imageGalleryRef = useRef<HTMLInputElement>(null);
   const imageCameraRef = useRef<HTMLInputElement>(null);
@@ -98,13 +104,10 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
     }
   };
 
-  const clearSelectedVideo = () => {
-  setSelectedVideo(null);
+ 
+  const clearSelectedVideos = () => {
+  setSelectedVideos([]);
   setRemoveAudio(false);
-
-  if (videoInputRef.current) {
-    videoInputRef.current.value = "";
-  }
 
   if (videoGalleryRef.current) {
     videoGalleryRef.current.value = "";
@@ -115,20 +118,23 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
   }
 };
 
+
   const handleSubmit = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
 
     try {
       let imageUrls: string[] = [];
-      let videoUrl = "";
+      
 
       if (selectedImages.length > 0) {
         imageUrls = await uploadImages(selectedImages);
       }
 
-      if (selectedVideo) {
-        videoUrl = await uploadVideo(selectedVideo, removeAudio);
+      let videoUrls: string[] = [];
+
+      if (selectedVideos.length > 0) {
+        videoUrls = await uploadVideos(selectedVideos, removeAudio);
       }
 
       await createReport(
@@ -140,14 +146,16 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
           priority: reportData.priority,
           notes: reportData.notes,
           imageUrls: imageUrls,
-          videoUrl: videoUrl,
+          videoUrls,
+          videoUrl: videoUrls[0] || "",
+          
         },
         selectedPdf
       );
 
       alert("Report Saved Successfully");
-      setSelectedImages([]);
-      setSelectedVideo(null);
+        setSelectedImages([]);
+        clearSelectedVideos();
 
       setSelectedPdf(null);
         if (pdfInputRef.current) {
@@ -259,28 +267,44 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
           }}
         />
 
-        <input
-          ref={videoGalleryRef}
-          type="file"
-          accept="video/*"
-          hidden
-          onChange={(e) => {
-            setSelectedVideo(e.target.files?.[0] || null);
-            e.target.value = "";
-          }}
-        />
+       <input
+            ref={videoGalleryRef}
+            type="file"
+            accept="video/*"
+            multiple
+            hidden
+            onChange={(e) => {
+              const files = Array.from(e.target.files || []);
+              setSelectedVideos((prev) => {
+                const remaining = 5 - prev.length;
+                return [...prev, ...files.slice(0, remaining)];
+              });
+              e.target.value = "";
+            }}
+          />
 
-        <input
-          ref={videoCameraRef}
-          type="file"
-          accept="video/*"
-          capture="environment"
-          hidden
-          onChange={(e) => {
-            setSelectedVideo(e.target.files?.[0] || null);
-            e.target.value = "";
-          }}
-        />
+         <input
+                ref={videoCameraRef}
+                type="file"
+                accept="video/*"
+                capture="environment"
+                hidden
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+
+                  setSelectedVideos((prev) => {
+                    const remaining = 5 - prev.length;
+
+                    if (files.length > remaining) {
+                      alert("Maximum 5 videos allowed");
+                    }
+
+                    return [...prev, ...files.slice(0, remaining)];
+                  });
+
+                  e.target.value = "";
+                }}
+              />
 
         <input
               ref={pdfInputRef}
@@ -521,70 +545,114 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
                     </div>
                   )}
 
-                  {/* Video Upload - Desktop */}
+                 {/* Video Upload - Desktop */}
                   <div className="hidden md:block">
                     <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider block mb-1.5">
-                      🎥 Report Video
+                      🎥 Report Videos (Max 5)
                     </label>
+
                     <input
-                      ref={videoInputRef}
-                      type="file"
-                      accept="video/*"
-                      onChange={(e) => setSelectedVideo(e.target.files?.[0] || null)}
-                      className="w-full border border-slate-300 rounded-xl p-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                        ref={videoInputRef}
+                        type="file"
+                        accept="video/*"
+                        multiple
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+
+                          setSelectedVideos((prev) => {
+                            const remaining = 5 - prev.length;
+
+                            if (files.length > remaining) {
+                              alert("Maximum 5 videos allowed");
+                            }
+
+                            return [...prev, ...files.slice(0, remaining)];
+                          });
+
+                          e.target.value = "";
+                        }}
+                        disabled={selectedVideos.length >= 5}
+                        className="w-full border border-slate-300 rounded-xl p-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      />
+
                   </div>
 
                   {/* Video Upload - Mobile */}
                   <div className="md:hidden">
                     <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider block mb-1.5">
-                      🎥 Report Video
+                      🎥 Report Videos (Max 5)
                     </label>
+
                     <button
                       type="button"
                       onClick={() => setShowVideoOptions(true)}
-                      className="w-full border border-slate-300 rounded-xl p-3 bg-white text-left hover:bg-slate-50 transition-colors"
+                      disabled={selectedVideos.length >= 5}
+                      className="w-full border border-slate-300 rounded-xl p-3 bg-white text-left hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Upload Video
+                      Upload Videos ({selectedVideos.length}/5)
                     </button>
                   </div>
 
-                  {/* Video Preview */}
-                 
-                    {selectedVideo && (
-                      <div className="relative col-span-2 mt-3 w-full min-w-0">
-                        <div className="relative w-full max-w-xs">
-                          <video
-                            controls
-                            className="block w-full rounded-lg border-2 border-slate-200"
-                          >
-                            <source src={URL.createObjectURL(selectedVideo)} />
-                          </video>
+            {/* Video Preview */}
 
-                          {/* Remove Video Button */}
-                          <button
-                            type="button"
-                            onClick={clearSelectedVideo}
-                            aria-label="Remove selected video"
-                            className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-sm font-bold text-white shadow-md transition-colors hover:bg-red-700"
-                          >
-                            ✕
-                          </button>
-                        </div>
+              {selectedVideos.length > 0 && (
+                <div className="col-span-2 mt-3 w-full min-w-0">
+                  {/* Video Cards */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {selectedVideos.map((video, index) => (
+                      <div
+                        key={`${video.name}-${video.size}-${index}`}
+                        className="relative min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-2 shadow-sm"
+                      >
+                        {/* Video Name */}
+                        <p className="mb-2 truncate pr-5 text-xs font-medium text-slate-700">
+                          Video {index + 1}: {video.name}
+                        </p>
 
-                        {/* Remove Audio Checkbox */}
-                        <label className="mt-3 flex w-fit cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
-                          <input
-                            type="checkbox"
-                            checked={removeAudio}
-                            onChange={(e) => setRemoveAudio(e.target.checked)}
-                            className="h-4 w-4 shrink-0 accent-blue-600"
-                          />
-                          <span>Remove Audio</span>
-                        </label>
+                        {/* Compact Video Preview */}
+                        <video
+                          controls
+                          playsInline
+                          preload="metadata"
+                          className="block h-24 w-full rounded-lg bg-black object-contain sm:h-28"
+                          src={URL.createObjectURL(video)}
+                        />
+
+                        {/* Remove Video Button */}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSelectedVideos((prev) =>
+                              prev.filter((_, i) => i !== index)
+                            )
+                          }
+                          aria-label={`Remove video ${index + 1}`}
+                          className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-sm font-bold text-white shadow-md transition-colors hover:bg-red-700"
+                        >
+                          ✕
+                        </button>
                       </div>
-                    )}
+                    ))}
+                  </div>
 
+                  {/* Video Count */}
+                  <p className="mt-3 text-sm text-slate-600">
+                    {selectedVideos.length}/5 videos selected
+                  </p>
+
+                  {/* Remove Audio Checkbox */}
+                  <label className="mt-3 flex w-fit cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={removeAudio}
+                      onChange={(e) => setRemoveAudio(e.target.checked)}
+                      className="h-4 w-4 shrink-0 accent-blue-600"
+                    />
+                    <span>Remove Audio from all videos</span>
+                  </label>
+                </div>
+              )} 
+                          
                 </div>
 
                 <div className="mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
@@ -692,32 +760,61 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
                           )}
                         </td>
 
-                    <td className="p-4">
-                      <div className="flex flex-wrap gap-2">
-                        {report.imageUrls && report.imageUrls.length > 0 && (
-                          <button
-                            onClick={() => {
-                              setSelectedViewImages(report.imageUrls);
-                              setCurrentImageIndex(0);
-                            }}
-                            className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold rounded-lg transition-all"
-                          >
-                            📷 View {report.imageUrls.length > 1 && `(${report.imageUrls.length})`}
-                          </button>
-                        )}
-                        {report.videoUrl && (
-                          <button
-                            onClick={() => setSelectedViewVideo(report.videoUrl)}
-                            className="px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white text-xs font-semibold rounded-lg transition-all"
-                          >
-                            ▶ Play
-                          </button>
-                        )}
-                        {(!report.imageUrls || report.imageUrls.length === 0) && !report.videoUrl && (
-                          <span className="text-xs text-slate-400">No Attachment</span>
-                        )}
-                      </div>
-                    </td>
+                  <td className="p-4">
+                        <div className="flex flex-wrap gap-2">
+                          {report.imageUrls && report.imageUrls.length > 0 && (
+                            <button
+                              onClick={() => {
+                                setSelectedViewImages(report.imageUrls);
+                                setCurrentImageIndex(0);
+                              }}
+                              className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold rounded-lg transition-all"
+                            >
+                              📷 View {report.imageUrls.length > 1 && `(${report.imageUrls.length})`}
+                            </button>
+                          )}
+
+                          {(report.videoUrls?.length
+                            ? report.videoUrls
+                            : report.videoUrl
+                              ? [report.videoUrl]
+                              : []
+                          ).length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedViewVideos(
+                                  report.videoUrls?.length
+                                    ? report.videoUrls
+                                    : report.videoUrl
+                                      ? [report.videoUrl]
+                                      : []
+                                );
+                                setCurrentVideoIndex(0);
+                              }}
+                              className="px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white text-xs font-semibold rounded-lg transition-all"
+                            >
+                              ▶ View (
+                              {report.videoUrls?.length
+                                ? report.videoUrls.length
+                                : report.videoUrl
+                                  ? 1
+                                  : 0}
+                              )
+                            </button>
+                          )}
+
+                          {(!report.imageUrls || report.imageUrls.length === 0) &&
+                            (!report.videoUrls || report.videoUrls.length === 0) &&
+                            !report.videoUrl && (
+                              <span className="text-xs text-slate-400">
+                                No Attachment
+                              </span>
+                            )}
+                        </div>
+                      </td>
+
+
                     <td className="p-4">
                       <button
                         onClick={() => handleDeleteReport(report.id)}
@@ -824,14 +921,28 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
                       📷 View {report.imageUrls.length > 1 && `(${report.imageUrls.length})`}
                     </button>
                   )}
-                  {report.videoUrl && (
-                    <button
-                      onClick={() => setSelectedViewVideo(report.videoUrl)}
-                      className="flex-1 px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white text-xs font-semibold rounded-lg transition-all active:scale-95"
-                    >
-                      ▶ Play
-                    </button>
-                  )}
+
+                 {(() => {
+                    const videos = report.videoUrls?.length
+                      ? report.videoUrls
+                      : report.videoUrl
+                        ? [report.videoUrl]
+                        : [];
+
+                    return videos.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedViewVideos(videos);
+                          setCurrentVideoIndex(0);
+                        }}
+                        className="flex-1 px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white text-xs font-semibold rounded-lg transition-all active:scale-95"
+                      >
+                        ▶ View ({videos.length})
+                      </button>
+                    );
+                  })()}
+
                   <button
                     onClick={() => handleDeleteReport(report.id)}
                     className="flex-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-lg transition-all active:scale-95"
@@ -927,40 +1038,73 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
         )}
 
         {/* Video Viewer Modal */}
-        
-        {selectedViewVideo && (
-            <div className="fixed inset-x-0 bottom-0 top-[96px] z-[9999] flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-5">
-              <div className="flex max-h-[calc(100dvh-120px)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-                {/* Modal Header */}
-                <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 py-3 sm:px-5">
-                  <h2 className="text-lg font-bold text-slate-800">
-                    Video Report
-                  </h2>
+{selectedViewVideos.length > 0 && (
+  <div className="fixed inset-x-0 bottom-0 top-[96px] z-[9999] flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-5">
+    <div className="flex max-h-[calc(100dvh-120px)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl animate-scaleIn">
 
-                  <button
-                    type="button"
-                    onClick={() => setSelectedViewVideo(null)}
-                    className="flex shrink-0 items-center justify-center rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600"
-                  >
-                    Close
-                  </button>
-                </div>
+      {/* Modal Header */}
+      <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 py-3 sm:px-5">
+        <div>
+          <h2 className="text-lg font-bold text-slate-800">
+            Video {currentVideoIndex + 1} of {selectedViewVideos.length}
+          </h2>
+          <p className="text-xs text-slate-500">
+            Use Previous and Next to view videos
+          </p>
+        </div>
 
-                {/* Video */}
-                <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-black p-2 sm:p-4">
-                  <video
-                      controls
-                      autoPlay
-                      playsInline
-                      className="block h-auto max-h-[calc(100dvh-220px)] w-auto max-w-full rounded-lg object-contain"
-                    >
-                      <source src={selectedViewVideo} />
-                    </video>
-                </div>
-              </div>
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedViewVideos([]);
+            setCurrentVideoIndex(0);
+          }}
+          className="flex shrink-0 items-center justify-center rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-red-600 active:scale-95"
+        >
+          Close
+        </button>
+      </div>
+
+      {/* Video */}
+      <div className="flex h-[60vh] min-h-0 items-center justify-center overflow-hidden bg-black p-2 sm:h-[65vh] sm:p-4">
+        <video
+          key={selectedViewVideos[currentVideoIndex]}
+          controls
+          autoPlay
+          playsInline
+          src={selectedViewVideos[currentVideoIndex]}
+          className="block h-auto max-h-full w-auto max-w-full rounded-lg object-contain"
+        />
+      </div>
+
+      {/* Navigation Buttons */}
+            <div className="flex shrink-0 justify-center gap-4 border-t p-4">
+              <button
+                type="button"
+                disabled={currentVideoIndex === 0}
+                onClick={() =>
+                  setCurrentVideoIndex((prev) => prev - 1)
+                }
+                className="rounded-lg bg-slate-600 px-5 py-2 font-semibold text-white transition-all hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-40 active:scale-95"
+              >
+                ← Previous
+              </button>
+
+              <button
+                type="button"
+                disabled={currentVideoIndex === selectedViewVideos.length - 1}
+                onClick={() =>
+                  setCurrentVideoIndex((prev) => prev + 1)
+                }
+                className="rounded-lg bg-blue-600 px-5 py-2 font-semibold text-white transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40 active:scale-95"
+              >
+                Next →
+              </button>
             </div>
-          )}
-       
+          </div>
+        </div>
+      )}
+              
         {/* Notes Viewer Modal */}
         {selectedNotes && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-fadeIn">
@@ -1026,38 +1170,51 @@ const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
         )}
 
         {/* Video Upload Options Modal - Mobile */}
-        {showVideoOptions && (
-          <div className="fixed inset-0 bg-black/60 flex items-end justify-center z-50 md:hidden animate-fadeIn">
-            <div className="bg-white rounded-t-3xl w-full p-5 animate-slideUp">
-              <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-4"></div>
-              <h2 className="text-xl font-bold mb-5">Upload Video</h2>
-              <button
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-xl mb-3 font-semibold transition-all active:scale-95"
-                onClick={() => {
-                  setShowVideoOptions(false);
-                  videoCameraRef.current?.click();
-                }}
-              >
-                🎥 Record Video
-              </button>
-              <button
-                className="w-full bg-green-600 hover:bg-green-700 text-white p-3 rounded-xl mb-3 font-semibold transition-all active:scale-95"
-                onClick={() => {
-                  setShowVideoOptions(false);
-                  videoGalleryRef.current?.click();
-                }}
-              >
-                📁 Gallery
-              </button>
-              <button
-                className="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 p-3 rounded-xl font-semibold transition-all active:scale-95"
-                onClick={() => setShowVideoOptions(false)}
-              >
-                Cancel
-              </button>
+
+          {showVideoOptions && (
+            <div className="fixed inset-0 bg-black/60 flex items-end justify-center z-50 md:hidden animate-fadeIn">
+              <div className="bg-white rounded-t-3xl w-full p-5 animate-slideUp">
+                <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-4"></div>
+
+                <h2 className="text-xl font-bold mb-2">Upload Videos</h2>
+                <p className="text-sm text-slate-500 mb-5">
+                  Select up to 5 videos ({selectedVideos.length}/5 selected)
+                </p>
+
+                <button
+                  type="button"
+                  disabled={selectedVideos.length >= 5}
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-xl mb-3 font-semibold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => {
+                    setShowVideoOptions(false);
+                    videoCameraRef.current?.click();
+                  }}
+                >
+                  🎥 Record Video
+                </button>
+
+                <button
+                  type="button"
+                  disabled={selectedVideos.length >= 5}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white p-3 rounded-xl mb-3 font-semibold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => {
+                    setShowVideoOptions(false);
+                    videoGalleryRef.current?.click();
+                  }}
+                >
+                  📁 Gallery
+                </button>
+
+                <button
+                  type="button"
+                  className="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 p-3 rounded-xl font-semibold transition-all active:scale-95"
+                  onClick={() => setShowVideoOptions(false)}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
       </div>
 
       <style jsx>{`

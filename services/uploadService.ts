@@ -50,3 +50,32 @@ export async function uploadVideo(
 
   return response.text();
 }
+
+
+export async function uploadVideos(
+  files: File[],
+  removeAudio: boolean = false
+): Promise<string[]> {
+  const token = localStorage.getItem("token");
+  const formData = new FormData();
+
+  files.forEach((file) => {
+    formData.append("files", file);
+  });
+
+  formData.append("removeAudio", String(removeAudio));
+
+  const response = await fetch(`${API_BASE_URL}/api/upload/videos`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to upload videos");
+  }
+
+  return response.json();
+}

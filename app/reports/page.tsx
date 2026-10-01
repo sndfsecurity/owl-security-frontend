@@ -22,7 +22,10 @@ export default function ReportsPage() {
 
   const [selectedViewImages, setSelectedViewImages] = useState<string[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+
+  const [selectedViewVideos, setSelectedViewVideos] = useState<string[]>([]);
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+
   const [selectedNotes, setSelectedNotes] = useState<string | null>(null);
   const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
   
@@ -328,17 +331,32 @@ export default function ReportsPage() {
                           📷 View {report.imageUrls.length > 1 && `(${report.imageUrls.length})`}
                         </button>
                       )}
-                      {report.videoUrl && (
+
+                      {(report.videoUrls?.length > 0 || report.videoUrl) && (
                         <button
-                          onClick={() => setSelectedVideo(report.videoUrl)}
+                          onClick={() => {
+                            const videos = report.videoUrls?.length
+                              ? report.videoUrls
+                              : [report.videoUrl];
+
+                            setSelectedViewVideos(videos);
+                            setCurrentVideoIndex(0);
+                          }}
                           className="flex-1 min-w-[80px] px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white text-xs font-semibold rounded-lg transition-all active:scale-95"
                         >
-                          ▶ Play
+                          ▶ View (
+                          {report.videoUrls?.length || (report.videoUrl ? 1 : 0)})
                         </button>
                       )}
-                      {(!report.imageUrls || report.imageUrls.length === 0) && !report.videoUrl && (
-                        <span className="text-xs text-slate-400 py-2">No Attachment</span>
+
+                      {(!report.imageUrls || report.imageUrls.length === 0) &&
+                        !(report.videoUrls?.length > 0 || report.videoUrl) && (
+                          <span className="text-xs text-slate-400 py-2">
+                            No Attachment
+                          </span>
                       )}
+                                                                  
+                      
                     </div>
                   </div>
                 </div>
@@ -442,17 +460,30 @@ export default function ReportsPage() {
                               📷 View {report.imageUrls.length > 1 && `(${report.imageUrls.length})`}
                             </button>
                           )}
-                          {report.videoUrl && (
-                            <button
-                              onClick={() => setSelectedVideo(report.videoUrl)}
-                              className="px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white text-xs font-semibold rounded-lg transition-all"
-                            >
-                              ▶ Play
-                            </button>
-                          )}
-                          {(!report.imageUrls || report.imageUrls.length === 0) && !report.videoUrl && (
-                            <span className="text-xs text-slate-400">No Attachment</span>
-                          )}
+
+                          {(report.videoUrls?.length > 0 || report.videoUrl) && (
+                              <button
+                                onClick={() => {
+                                  const videos = report.videoUrls?.length
+                                    ? report.videoUrls
+                                    : [report.videoUrl];
+
+                                  setSelectedViewVideos(videos);
+                                  setCurrentVideoIndex(0);
+                                }}
+                                className="px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white text-xs font-semibold rounded-lg transition-all"
+                              >
+                                ▶ View ({report.videoUrls?.length || (report.videoUrl ? 1 : 0)})
+                              </button>
+                            )}
+
+                            {(!report.imageUrls || report.imageUrls.length === 0) &&
+                                !(report.videoUrls?.length > 0 || report.videoUrl) && (
+                                  <span className="text-xs text-slate-400">
+                                    No Attachment
+                                  </span>
+                              )}
+
                         </div>
                       </td>
                     </tr>
@@ -547,40 +578,65 @@ export default function ReportsPage() {
           </div>
         )}
 
-        {/* Video Viewer Modal */}
-        {/* Video Viewer Modal */}
-{selectedVideo && (
-  <div className="fixed inset-x-0 bottom-0 top-[96px] z-[9999] flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-5">
-    <div className="flex max-h-[calc(100dvh-120px)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-      {/* Modal Header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 py-3 sm:px-5">
-        <h2 className="text-lg font-bold text-slate-800">
-          Video Report
-        </h2>
+       
+      {/* Video Viewer Modal */}
 
-        <button
-          type="button"
-          onClick={() => setSelectedVideo(null)}
-          className="flex shrink-0 items-center justify-center rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600"
-        >
-          Close
-        </button>
-      </div>
+          {selectedViewVideos.length > 0 && (
+            <div className="fixed inset-x-0 bottom-0 top-[96px] z-[9999] flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-5">
+              <div className="flex max-h-[calc(100dvh-120px)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+                {/* Modal Header */}
+                <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 py-3 sm:px-5">
+                  <h2 className="text-lg font-bold text-slate-800">
+                    Video {currentVideoIndex + 1} of {selectedViewVideos.length}
+                  </h2>
 
-      {/* Video */}
-      <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-black p-2 sm:p-4">
-        <video
-          controls
-          autoPlay
-          playsInline
-          className="block h-auto max-h-[calc(100dvh-220px)] w-auto max-w-full rounded-lg object-contain"
-        >
-          <source src={selectedVideo} />
-        </video>
-      </div>
-    </div>
-  </div>
-)}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedViewVideos([]);
+                      setCurrentVideoIndex(0);
+                    }}
+                    className="flex shrink-0 items-center justify-center rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600"
+                  >
+                    Close
+                  </button>
+                </div>
+
+                {/* Video */}
+                <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-black p-2 sm:p-4">
+                  <video
+                    key={selectedViewVideos[currentVideoIndex]}
+                    controls
+                    autoPlay
+                    playsInline
+                    className="block h-auto max-h-[calc(100dvh-220px)] w-auto max-w-full rounded-lg object-contain"
+                  >
+                    <source src={selectedViewVideos[currentVideoIndex]} />
+                  </video>
+                </div>
+
+                {/* Navigation */}
+                <div className="flex justify-center gap-4 border-t p-4">
+                  <button
+                    disabled={currentVideoIndex === 0}
+                    onClick={() => setCurrentVideoIndex(currentVideoIndex - 1)}
+                    className="px-5 py-2 bg-slate-600 hover:bg-slate-700 text-white font-semibold rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                  >
+                    ← Previous
+                  </button>
+
+                  <button
+                    disabled={currentVideoIndex === selectedViewVideos.length - 1}
+                    onClick={() => setCurrentVideoIndex(currentVideoIndex + 1)}
+                    className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                  >
+                    Next →
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
         {/* Notes Viewer Modal */}
         {selectedNotes && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-fadeIn">

@@ -43,8 +43,8 @@ import { FiDownload } from "react-icons/fi";
   const [currentImageIndex, setCurrentImageIndex] =
   useState(0);
 
-  const [selectedVideo, setSelectedVideo] =
-  useState<string | null>(null);
+  const [selectedViewVideos, setSelectedViewVideos] = useState<string[]>([]);
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
 
  const [fromDate, setFromDate] = useState("");
 
@@ -494,20 +494,29 @@ if (selectedImages.length === 0) return;
       </button>
     )}
 
-    {report.videoUrl && (
-      <button
-        onClick={() => setSelectedVideo(report.videoUrl)}
-        className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap"
-      >
-        Play Video
-      </button>
-    )}
+    {(report.videoUrls?.length > 0 || report.videoUrl) && (
+          <button
+            onClick={() => {
+              const videos = report.videoUrls?.length
+                ? report.videoUrls
+                : [report.videoUrl];
 
-    {!report.imageUrls?.length && !report.videoUrl && (
-      <span className="text-slate-500 text-sm">
-        No Attachment
-      </span>
-    )}
+              setSelectedViewVideos(videos);
+              setCurrentVideoIndex(0);
+            }}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap"
+          >
+            ▶ View ({report.videoUrls?.length || 1})
+          </button>
+        )}
+
+        {!report.imageUrls?.length &&
+          !report.videoUrls?.length &&
+          !report.videoUrl && (
+            <span className="text-slate-500 text-sm">
+              No Attachment
+            </span>
+        )}
   </div>
 </td>
 
@@ -661,28 +670,32 @@ if (selectedImages.length === 0) return;
 
           )}
 
+          
+          {(report.videoUrls?.length > 0 || report.videoUrl) && (
+              <button
+                onClick={() => {
+                  const videos = report.videoUrls?.length
+                    ? report.videoUrls
+                    : [report.videoUrl];
 
-          {report.videoUrl && (
+                  setSelectedViewVideos(videos);
+                  setCurrentVideoIndex(0);
+                }}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-xl"
+              >
+                ▶ View Videos ({report.videoUrls?.length || 1})
+              </button>
+            )}
 
-          <button
-            onClick={() =>
-              setSelectedVideo(report.videoUrl)
-            }
-            className="w-full bg-purple-600 text-white py-2 rounded-xl">
-            Play Video
-          </button>
+        {/* No Attachment */}
 
-        )}
-
-{/* No Attachment */}
-
-        {!report.imageUrls?.length && !report.videoUrl && (
-
-          <div className="w-full bg-gray-100 text-center py-2 rounded-xl text-gray-500">
-            No Attachment
-          </div>
-
-        )}
+        {!report.imageUrls?.length &&
+            !report.videoUrls?.length &&
+            !report.videoUrl && (
+              <div className="w-full bg-gray-100 text-center py-2 rounded-xl text-gray-500">
+                No Attachment
+              </div>
+          )}
 
 
       </div>
@@ -852,37 +865,61 @@ if (selectedImages.length === 0) return;
 )}
 
 
-{selectedVideo && (
-
-  <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-
-    <div className="bg-white rounded-2xl p-4 max-w-[95vw]">
-
-      <div className="flex justify-end mb-3">
+{/* Video Viewer Modal */}
+{selectedViewVideos.length > 0 && (
+  <div className="fixed inset-x-0 bottom-0 top-[96px] z-[9999] flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-5">
+    <div className="flex max-h-[calc(100dvh-120px)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+      {/* Modal Header */}
+      <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 py-3 sm:px-5">
+        <h2 className="text-lg font-bold text-slate-800">
+          Video {currentVideoIndex + 1} of {selectedViewVideos.length}
+        </h2>
 
         <button
-          onClick={() =>
-            setSelectedVideo(null)
-          }
-          className="bg-red-600 text-white px-4 py-2 rounded-lg"
+          type="button"
+          onClick={() => {
+            setSelectedViewVideos([]);
+            setCurrentVideoIndex(0);
+          }}
+          className="flex shrink-0 items-center justify-center rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600"
         >
           Close
         </button>
-
       </div>
 
-      <video
-        controls
-        className="max-w-full max-h-[65vh] rounded"
+      {/* Video */}
+      <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-black p-2 sm:p-4">
+        <video
+          key={selectedViewVideos[currentVideoIndex]}
+          controls
+          autoPlay
+          playsInline
+          className="block h-auto max-h-[calc(100dvh-220px)] w-auto max-w-full rounded-lg object-contain"
+        >
+          <source src={selectedViewVideos[currentVideoIndex]} />
+        </video>
+      </div>
 
-      >
-        <source src={selectedVideo} />
-      </video>
+      {/* Navigation */}
+      <div className="flex justify-center gap-4 border-t p-4">
+        <button
+          disabled={currentVideoIndex === 0}
+          onClick={() => setCurrentVideoIndex(currentVideoIndex - 1)}
+          className="px-5 py-2 bg-slate-600 hover:bg-slate-700 text-white font-semibold rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+        >
+          ← Previous
+        </button>
 
+        <button
+          disabled={currentVideoIndex === selectedViewVideos.length - 1}
+          onClick={() => setCurrentVideoIndex(currentVideoIndex + 1)}
+          className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+        >
+          Next →
+        </button>
+      </div>
     </div>
-
   </div>
-
 )}
 
 
