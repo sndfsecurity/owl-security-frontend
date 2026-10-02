@@ -501,14 +501,14 @@ export default function DailySecurityReportBuilder({
     };
 
     const paragraphFrom = (
-      selector: string,
-      alignment = AlignmentType.LEFT,
-      after = 200
+     selector: string,
+        alignment: "left" | "center" | "right",
+        spacingAfter: number
     ) => {
       const element = doc.querySelector(selector);
       return new Paragraph({
         alignment,
-        spacing: { after },
+         spacing: { after: spacingAfter },
         children: element ? makeWordRuns(element) : [],
       });
     };
