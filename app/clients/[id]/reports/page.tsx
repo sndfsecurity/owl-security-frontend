@@ -1,12 +1,15 @@
 // app/clients/[id]/reports/page.tsx
 "use client";
 
+
 import NotesViewer from "@/components/NotesViewer";
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { FiDownload } from "react-icons/fi";
 import { getClientById } from "@/services/clientService";
+
+import DailySecurityReportBuilder from "@/components/DailySecurityReportBuilder";
 
 import {
   uploadImages,
@@ -38,6 +41,8 @@ const NotesEditor = dynamic(
 
 const getPlainText = (html: string) =>
   html.replace(/<[^>]*>/g, "").trim();
+
+
 
 export default function ClientReportsPage() {
   const params = useParams();
@@ -472,6 +477,22 @@ export default function ClientReportsPage() {
                         </div>
                       )}
                     </div>
+
+                {/* Daily Security Report */}
+                 <DailySecurityReportBuilder
+                      onAttachPdf={(file) => {
+                        if (file.size > 10 * 1024 * 1024) {
+                          alert("PDF size must not exceed 10 MB");
+                          return;
+                        }
+
+                        setSelectedPdf(file);
+
+                        if (pdfInputRef.current) {
+                          pdfInputRef.current.value = "";
+                        }
+                      }}
+                    />
 
                 </div>
 
