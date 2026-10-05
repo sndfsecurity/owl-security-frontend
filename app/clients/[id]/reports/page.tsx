@@ -9,7 +9,10 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { FiDownload } from "react-icons/fi";
 import { getClientById } from "@/services/clientService";
 
-import DailySecurityReportBuilder from "@/components/DailySecurityReportBuilder";
+import DailySecurityReportBuilder, {
+  DailySecurityReportBuilderRef,
+} from "@/components/DailySecurityReportBuilder";
+
 
 import {
   uploadImages,
@@ -20,6 +23,11 @@ import {
   createReport,
   getReportsByClientId,
   deleteReport,
+  createDraft,
+  getDraftsByClientId,
+  updateDraftWithPdf,
+  submitDraft,
+  getSubmittedReportsByClientId,
 } from "@/services/reportService";
 
 import dynamic from "next/dynamic";
@@ -54,6 +62,15 @@ export default function ClientReportsPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
 
+const [draftReports, setDraftReports] = useState<any[]>([]);
+const [activeDraftId, setActiveDraftId] = useState<number | null>(null);
+const [initialDraftData, setInitialDraftData] = useState<string | null>(null);
+const [isSavingDraft, setIsSavingDraft] = useState(false);
+
+const [draftImageUrls, setDraftImageUrls] = useState<string[]>([]);
+const [draftVideoUrls, setDraftVideoUrls] = useState<string[]>([]);
+const [draftPdfUrl, setDraftPdfUrl] = useState<string | null>(null);
+
   const [selectedVideos, setSelectedVideos] = useState<File[]>([]);
 
   const [selectedViewVideos, setSelectedViewVideos] = useState<string[]>([]);
@@ -61,6 +78,8 @@ export default function ClientReportsPage() {
 
   const [selectedPdf, setSelectedPdf] = useState<File | null>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
+
+  const dailyReportBuilderRef = useRef<DailySecurityReportBuilderRef>(null);
 
   const [selectedViewPdf, setSelectedViewPdf] = useState<string | null>(null);
 
@@ -101,7 +120,11 @@ export default function ClientReportsPage() {
 
   const loadReports = async (currentPage = page) => {
     try {
-      const data = await getReportsByClientId(clientId, currentPage, 5);
+          const data = await getSubmittedReportsByClientId(
+            clientId,
+            currentPage,
+            5
+          );      
       setReports(data.content);
       setTotalPages(data.totalPages);
     } catch (error) {
@@ -109,7 +132,236 @@ export default function ClientReportsPage() {
     }
   };
 
+  const loadDrafts = async () => {
+  try {
+    const data = await getDraftsByClientId(clientId);
+    setDraftReports(Array.isArray(data) ? data : []);
+  } catch (error) {
+    console.error("Failed to load drafts:", error);
+  }
+};
  
+const handleContinueDraft = (draft: any) => {
+  setActiveDraftId(draft.id);
+
+  setInitialDraftData(
+    draft.draftData || null
+  );
+
+  setReportData({
+    reportDate: draft.reportDate || "",
+    reportTime: draft.reportTime || "",
+    status: draft.status || "NORMAL",
+    priority: draft.priority || "LOW",
+    notes: draft.notes || "",
+  });
+
+  const savedImages = Array.isArray(draft.imageUrls)
+    ? draft.imageUrls
+    : [];
+
+  const savedVideos = Array.isArray(draft.videoUrls)
+    ? draft.videoUrls
+    : draft.videoUrl
+      ? [draft.videoUrl]
+      : [];
+
+  const savedPdfUrl =
+      typeof draft.pdfUrl === "string" && draft.pdfUrl.trim()
+        ? draft.pdfUrl
+        : null;
+
+  setDraftImageUrls(savedImages);
+  setDraftVideoUrls(savedVideos);
+  setDraftPdfUrl(savedPdfUrl);
+
+  setSelectedImages([]);
+  clearSelectedVideos();
+
+  setSelectedPdf(null);
+
+  if (pdfInputRef.current) {
+    pdfInputRef.current.value = "";
+  }
+
+  setShowForm(true);
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+};
+
+
+const handleSaveDraft = async () => {
+  if (isSavingDraft) return;
+
+  const draftData =
+    dailyReportBuilderRef.current?.getDraftData();
+
+  if (!draftData) {
+    alert(
+      "Unable to read the report data. Please try again."
+    );
+    return;
+  }
+
+  let builderData: any;
+
+  try {
+    builderData = JSON.parse(draftData);
+  } catch (error) {
+    console.error("Invalid draft data:", error);
+    alert("Unable to save the draft. Please try again.");
+    return;
+  }
+
+  const hasDailyReportContent =
+    Boolean(builderData.shopName?.trim()) ||
+    Boolean(builderData.reportDate) ||
+    (Array.isArray(builderData.incidents) &&
+      builderData.incidents.some(
+        (item: any) =>
+          item.time?.trim() ||
+          item.branch?.trim() ||
+          item.details?.trim() ||
+          item.status?.trim()
+      ));
+
+  const hasOtherReportContent =
+    Boolean(reportData.notes?.trim()) ||
+    Boolean(selectedPdf) ||
+    Boolean(draftPdfUrl) ||
+    selectedImages.length > 0 ||
+    selectedVideos.length > 0 ||
+    draftImageUrls.length > 0 ||
+    draftVideoUrls.length > 0;
+
+  if (!hasDailyReportContent && !hasOtherReportContent) {
+    alert(
+      "Please add a report note, PDF, image, video, or create a Daily Security Report before saving the draft."
+    );
+    return;
+  }
+
+  setIsSavingDraft(true);
+
+  try {
+    let newImageUrls: string[] = [];
+    let newVideoUrls: string[] = [];
+
+    if (selectedImages.length > 0) {
+      newImageUrls = await uploadImages(selectedImages);
+    }
+
+    if (selectedVideos.length > 0) {
+      newVideoUrls = await uploadVideos(
+        selectedVideos,
+        removeAudio
+      );
+    }
+
+    /*
+     * These are the CURRENT media items.
+     *
+     * If an old draft image/video was removed,
+     * it is already removed from draftImageUrls /
+     * draftVideoUrls, so it will not come back.
+     */
+    const allImageUrls = [
+      ...draftImageUrls,
+      ...newImageUrls,
+    ];
+
+    const allVideoUrls = [
+      ...draftVideoUrls,
+      ...newVideoUrls,
+    ];
+
+    const payload = {
+      clientId: clientId,
+      reportDate: builderData.reportDate || "",
+      reportTime: reportData.reportTime || "",
+      status: reportData.status,
+      priority: reportData.priority,
+      notes: reportData.notes,
+      imageUrls: allImageUrls,
+      videoUrls: allVideoUrls,
+      videoUrl: allVideoUrls[0] || "",
+      reportLifecycle: "DRAFT",
+      draftData: draftData,
+    };
+
+    let savedDraft;
+
+    if (activeDraftId) {
+      /*
+       * Existing draft:
+       * UPDATE THE SAME DATABASE RECORD.
+       *
+       * If selectedPdf exists, the new PDF will replace
+       * the old PDF on the backend.
+       */
+      savedDraft = await updateDraftWithPdf(
+        activeDraftId,
+        payload,
+        selectedPdf
+      );
+    } else {
+      /*
+       * New draft:
+       * CREATE ONE NEW DATABASE RECORD.
+       */
+      savedDraft = await createDraft(
+        payload,
+        selectedPdf
+      );
+    }
+
+    setActiveDraftId(savedDraft.id);
+
+    setDraftImageUrls(
+      Array.isArray(savedDraft.imageUrls)
+        ? savedDraft.imageUrls
+        : allImageUrls
+    );
+
+    setDraftVideoUrls(
+      Array.isArray(savedDraft.videoUrls)
+        ? savedDraft.videoUrls
+        : allVideoUrls
+    );
+
+    setDraftPdfUrl(
+      typeof savedDraft.pdfUrl === "string"
+        && savedDraft.pdfUrl.trim()
+        ? savedDraft.pdfUrl
+        : draftPdfUrl
+    );
+
+    /*
+     * Newly selected local files have now been uploaded.
+     */
+    setSelectedImages([]);
+
+    clearSelectedVideos();
+
+    await loadDrafts();
+
+    alert("Draft saved successfully.");
+
+    setShowForm(false);
+    
+  } 
+  
+  catch (error) {
+    console.error("Failed to save draft:", error);
+    alert("Failed to save draft.");
+  } finally {
+    setIsSavingDraft(false);
+  }
+};
+
   const clearSelectedVideos = () => {
   setSelectedVideos([]);
   setRemoveAudio(false);
@@ -124,66 +376,136 @@ export default function ClientReportsPage() {
 };
 
 
-  const handleSubmit = async () => {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
+const handleSubmit = async () => {
+  if (isSubmitting) return;
 
-    try {
-      let imageUrls: string[] = [];
-      
+  setIsSubmitting(true);
 
-      if (selectedImages.length > 0) {
-        imageUrls = await uploadImages(selectedImages);
-      }
+  try {
+    let newImageUrls: string[] = [];
+    let newVideoUrls: string[] = [];
 
-      let videoUrls: string[] = [];
+    /*
+     * Upload newly selected local files first.
+     */
+    if (selectedImages.length > 0) {
+      newImageUrls = await uploadImages(selectedImages);
+    }
 
-      if (selectedVideos.length > 0) {
-        videoUrls = await uploadVideos(selectedVideos, removeAudio);
-      }
+    if (selectedVideos.length > 0) {
+      newVideoUrls = await uploadVideos(
+        selectedVideos,
+        removeAudio
+      );
+    }
 
-      await createReport(
-        {
-          clientId: clientId,
-          reportDate: "",
-          reportTime: "",
-          status: reportData.status,
-          priority: reportData.priority,
-          notes: reportData.notes,
-          imageUrls: imageUrls,
-          videoUrls,
-          videoUrl: videoUrls[0] || "",
-          
-        },
+    /*
+     * Current final media list.
+     *
+     * For a continued draft, this contains:
+     * old saved media still kept
+     * +
+     * newly selected media
+     */
+    const finalImageUrls = activeDraftId
+      ? [
+          ...draftImageUrls,
+          ...newImageUrls,
+        ]
+      : newImageUrls;
+
+    const finalVideoUrls = activeDraftId
+      ? [
+          ...draftVideoUrls,
+          ...newVideoUrls,
+        ]
+      : newVideoUrls;
+
+    const payload = {
+      clientId: clientId,
+      reportDate: "",
+      reportTime: "",
+      status: reportData.status,
+      priority: reportData.priority,
+      notes: reportData.notes,
+      imageUrls: finalImageUrls,
+      videoUrls: finalVideoUrls,
+      videoUrl: finalVideoUrls[0] || "",
+      reportLifecycle: "SUBMITTED",
+      draftData: "",
+    };
+
+    /*
+     * IMPORTANT:
+     *
+     * New report:
+     *      createReport()
+     *
+     * Existing draft:
+     *      submitDraft()
+     *
+     * Therefore an existing draft will NOT create
+     * another database record.
+     */
+    if (activeDraftId) {
+      await submitDraft(
+        activeDraftId,
+        payload,
         selectedPdf
       );
-
-      alert("Report Saved Successfully");
-        setSelectedImages([]);
-        clearSelectedVideos();
-
-      setSelectedPdf(null);
-        if (pdfInputRef.current) {
-          pdfInputRef.current.value = "";
-        }
-
-      setReportData({
-        reportDate: "",
-        reportTime: "",
-        status: "NORMAL",
-        priority: "LOW",
-        notes: "",
-      });
-      setShowForm(false);
-      loadReports();
-    } catch (error) {
-      console.error(error);
-      alert("Failed to save report");
-    } finally {
-      setIsSubmitting(false);
+    } else {
+      await createReport(
+        payload,
+        selectedPdf
+      );
     }
-  };
 
+    alert("Report Saved Successfully");
+
+    /*
+     * Reset the report form completely.
+     */
+    setSelectedImages([]);
+
+    clearSelectedVideos();
+
+    setSelectedPdf(null);
+
+    if (pdfInputRef.current) {
+      pdfInputRef.current.value = "";
+    }
+
+    setActiveDraftId(null);
+    setInitialDraftData(null);
+
+    setDraftImageUrls([]);
+    setDraftVideoUrls([]);
+    setDraftPdfUrl(null);
+
+    setReportData({
+      reportDate: "",
+      reportTime: "",
+      status: "NORMAL",
+      priority: "LOW",
+      notes: "",
+    });
+
+    setShowForm(false);
+
+    /*
+     * Refresh both sections.
+     */
+    await loadReports();
+    await loadDrafts();
+  } catch (error) {
+    console.error(error);
+    alert("Failed to save report");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+  
   const handleDeleteReport = async (reportId: number) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this report?");
     if (!confirmDelete) return;
@@ -205,6 +527,10 @@ export default function ClientReportsPage() {
     loadReports(page);
   }, [clientId, page]);
 
+  useEffect(() => {
+  loadDrafts();
+}, [clientId]);
+
   const handleDownloadImage = async () => {
     if (!selectedViewImages) return;
 
@@ -225,6 +551,35 @@ export default function ClientReportsPage() {
     }
   };
 
+ 
+  const handleStartNewReport = () => {
+
+  setActiveDraftId(null);
+  setInitialDraftData(null);
+
+  setDraftImageUrls([]);
+  setDraftVideoUrls([]);
+  setDraftPdfUrl(null);
+
+  setSelectedImages([]);
+  clearSelectedVideos();
+
+  setSelectedPdf(null);
+
+  if (pdfInputRef.current) {
+    pdfInputRef.current.value = "";
+  }
+
+  setReportData({
+    reportDate: "",
+    reportTime: "",
+    status: "NORMAL",
+    priority: "LOW",
+    notes: "",
+  });
+
+  setShowForm(true);
+};
   
 
   return (
@@ -341,8 +696,16 @@ export default function ClientReportsPage() {
               Manage and monitor client reports
             </p>
           </div>
+
           <button
-            onClick={() => setShowForm(!showForm)}
+           onClick={() => {
+              if (showForm) {
+                setShowForm(false);
+              } else {
+                handleStartNewReport();
+              }
+            }}
+
             className={`
               px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-semibold text-sm sm:text-base
               transition-all duration-300 shadow-lg hover:shadow-xl active:scale-95
@@ -424,6 +787,33 @@ export default function ClientReportsPage() {
                         Or attach a formatted report (PDF, maximum 10 MB)
                       </p>
 
+                      {draftPdfUrl && !selectedPdf && (
+                        <div className="mb-3 border border-blue-200 rounded-xl p-3 bg-blue-50/50">
+                          <div className="flex items-center gap-3">
+                            <div className="w-11 h-11 rounded-lg bg-red-100 flex items-center justify-center text-red-600 text-xl">
+                              📄
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-semibold text-slate-700">
+                                Saved Draft PDF
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                Previously attached PDF
+                              </p>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => setSelectedViewPdf(draftPdfUrl)}
+                              className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg"
+                            >
+                              View PDF
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
                       {!selectedPdf ? (
                         <button
                           type="button"
@@ -479,8 +869,11 @@ export default function ClientReportsPage() {
                     </div>
 
                 {/* Daily Security Report */}
-                 <DailySecurityReportBuilder
-                      onAttachPdf={(file) => {
+                <DailySecurityReportBuilder
+                    ref={dailyReportBuilderRef}
+                    initialDraftData={initialDraftData}
+                    onAttachPdf={(file) => {
+
                         if (file.size > 10 * 1024 * 1024) {
                           alert("PDF size must not exceed 10 MB");
                           return;
@@ -507,17 +900,30 @@ export default function ClientReportsPage() {
                       ref={imageInputRef}
                       accept="image/*"
                       multiple
+
                       onChange={(e) => {
                         const files = Array.from(e.target.files || []);
+
                         setSelectedImages((prev) => {
-                          const updated = [...prev, ...files];
-                          if (updated.length > 5) {
+                          const remaining =
+                            5 - draftImageUrls.length - prev.length;
+
+                          if (remaining <= 0) {
                             alert("Maximum 5 images allowed");
                             return prev;
                           }
-                          return updated;
+
+                          if (files.length > remaining) {
+                            alert("Maximum 5 images allowed");
+                          }
+
+                          return [
+                            ...prev,
+                            ...files.slice(0, remaining),
+                          ];
                         });
                       }}
+
                       className="w-full border border-slate-300 rounded-xl p-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
@@ -527,16 +933,61 @@ export default function ClientReportsPage() {
                     <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider block mb-1.5">
                       📷 Report Image
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => setShowImageOptions(true)}
-                      className="w-full border border-slate-300 rounded-xl p-3 bg-white text-left hover:bg-slate-50 transition-colors"
-                    >
-                      Upload Image
-                    </button>
+
+                   <button
+                        type="button"
+                        onClick={() => setShowImageOptions(true)}
+                        disabled={
+                          draftImageUrls.length + selectedImages.length >= 5
+                        }
+                        className="w-full border border-slate-300 rounded-xl p-3 bg-white text-left hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Upload Image
+                      </button>
+
                   </div>
 
+              
+    {/* Saved Draft Images */}
+
+      {draftImageUrls.length > 0 && (
+        <div className="flex gap-3 mt-3 flex-wrap col-span-2">
+          <div className="w-full">
+            <p className="text-xs font-semibold text-slate-600 mb-2">
+              Saved Draft Images ({draftImageUrls.length})
+            </p>
+          </div>
+
+            {draftImageUrls.map((imageUrl, index) => (
+              <div
+                key={`${imageUrl}-${index}`}
+                className="relative"
+              >
+                <img
+                  src={imageUrl}
+                  alt={`Saved draft ${index + 1}`}
+                  className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg border-2 border-blue-200"
+                />
+
+          <button
+            type="button"
+            onClick={() => {
+              setDraftImageUrls((prev) =>
+                prev.filter((_, i) => i !== index)
+              );
+            }}
+            aria-label={`Remove saved image ${index + 1}`}
+            className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-600 hover:bg-red-700 text-white text-sm font-bold flex items-center justify-center shadow-md"
+          >
+            ✕
+          </button>
+        </div>
+      ))}
+    </div>
+  )}
+
                   {/* Image Preview */}
+
                   {selectedImages.length > 0 && (
                     <div className="flex gap-3 mt-3 flex-wrap col-span-2">
                       {selectedImages.map((image, index) => (
@@ -577,22 +1028,35 @@ export default function ClientReportsPage() {
                         type="file"
                         accept="video/*"
                         multiple
+
                         onChange={(e) => {
-                          const files = Array.from(e.target.files || []);
+                            const files = Array.from(e.target.files || []);
 
-                          setSelectedVideos((prev) => {
-                            const remaining = 5 - prev.length;
+                            setSelectedVideos((prev) => {
+                              const remaining =
+                                5 - draftVideoUrls.length - prev.length;
 
-                            if (files.length > remaining) {
-                              alert("Maximum 5 videos allowed");
-                            }
+                              if (remaining <= 0) {
+                                alert("Maximum 5 videos allowed");
+                                return prev;
+                              }
 
-                            return [...prev, ...files.slice(0, remaining)];
-                          });
+                              if (files.length > remaining) {
+                                alert("Maximum 5 videos allowed");
+                              }
 
-                          e.target.value = "";
-                        }}
-                        disabled={selectedVideos.length >= 5}
+                              return [
+                                ...prev,
+                                ...files.slice(0, remaining),
+                              ];
+                            });
+
+                            e.target.value = "";
+                          }}
+                          disabled={
+                            draftVideoUrls.length + selectedVideos.length >= 5
+                          }
+
                         className="w-full border border-slate-300 rounded-xl p-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                       />
 
@@ -604,15 +1068,63 @@ export default function ClientReportsPage() {
                       🎥 Report Videos (Max 5)
                     </label>
 
-                    <button
+                   <button
                       type="button"
                       onClick={() => setShowVideoOptions(true)}
-                      disabled={selectedVideos.length >= 5}
+                      disabled={
+                        draftVideoUrls.length + selectedVideos.length >= 5
+                      }
                       className="w-full border border-slate-300 rounded-xl p-3 bg-white text-left hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Upload Videos ({selectedVideos.length}/5)
+                      Upload Videos ({draftVideoUrls.length + selectedVideos.length}/5)
                     </button>
+
                   </div>
+
+              
+              {/* Saved Draft Videos */}
+
+              {draftVideoUrls.length > 0 && (
+                <div className="col-span-2 mt-3 w-full min-w-0">
+                  <p className="text-xs font-semibold text-slate-600 mb-2">
+                    Saved Draft Videos ({draftVideoUrls.length})
+                  </p>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {draftVideoUrls.map((videoUrl, index) => (
+                      <div
+                        key={`${videoUrl}-${index}`}
+                        className="relative min-w-0 overflow-hidden rounded-xl border border-blue-200 bg-white p-2 shadow-sm"
+                      >
+                        <p className="mb-2 pr-7 text-xs font-medium text-slate-700 truncate">
+                          Saved Video {index + 1}
+                        </p>
+
+                        <video
+                          controls
+                          playsInline
+                          preload="metadata"
+                          className="block h-24 w-full rounded-lg bg-black object-contain sm:h-28"
+                          src={videoUrl}
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDraftVideoUrls((prev) =>
+                              prev.filter((_, i) => i !== index)
+                            );
+                          }}
+                          aria-label={`Remove saved video ${index + 1}`}
+                          className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-sm font-bold text-white shadow-md transition-colors hover:bg-red-700"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
             {/* Video Preview */}
 
@@ -677,25 +1189,124 @@ export default function ClientReportsPage() {
                 </div>
 
                 <div className="mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
-                  <button
-                    onClick={handleSubmit}
-                    disabled={isSubmitting}
-                    className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
-                  >
-                    {isSubmitting ? '⏳ Submitting...' : '💾 Save Report'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowForm(false)}
-                    className="px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-xl transition-all duration-200"
-                  >
-                    Cancel
-                  </button>
-                </div>
+
+                    <button
+                      type="button"
+                      onClick={handleSaveDraft}
+                      disabled={isSavingDraft || isSubmitting}
+                      className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                      {isSavingDraft
+                        ? "⏳ Saving Draft..."
+                        : "📝 Save Draft"}
+                    </button>
+
+                    <button
+                      onClick={handleSubmit}
+                      disabled={isSubmitting || isSavingDraft}
+                      className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                      {isSubmitting ? "⏳ Submitting..." : "💾 Save Report"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowForm(false)}
+                      className="px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-xl transition-all duration-200"
+                    >
+                      Cancel
+                    </button>
+
+                  </div>
+              
+
               </div>
             </div>
           </div>
         )}
+
+        {/* Draft Reports */}
+<div className="mb-6 sm:mb-8">
+  <div className="bg-white rounded-2xl shadow-xl border border-amber-100 overflow-hidden">
+    <div className="px-4 sm:px-6 py-4 border-b border-amber-100 bg-gradient-to-r from-amber-50 to-orange-50">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-bold text-slate-800">
+            Draft Reports
+          </h2>
+          <p className="text-sm text-slate-500 mt-1">
+            Continue unfinished reports from any device
+          </p>
+        </div>
+
+        <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">
+          {draftReports.length} Draft
+          {draftReports.length === 1 ? "" : "s"}
+        </span>
+      </div>
+    </div>
+
+    {draftReports.length === 0 ? (
+      <div className="p-6 text-center">
+        <p className="text-sm text-slate-500">
+          No draft reports available.
+        </p>
+      </div>
+    ) : (
+      <div className="divide-y divide-slate-100">
+        {draftReports.map((draft: any) => (
+          <div
+            key={draft.id}
+            className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+          >
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-semibold text-slate-800">
+                  {draft.reportDate || "Daily Security Report"}
+                </h3>
+
+                <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">
+                  DRAFT
+                </span>
+              </div>
+
+              <p className="mt-1 text-xs text-slate-500">
+                Last saved:{" "}
+                {draft.updatedAt
+                  ? new Date(draft.updatedAt).toLocaleString("en-IN")
+                  : "N/A"}
+              </p>
+
+              {draft.status && (
+                <p className="mt-1 text-xs text-slate-500">
+                  Status: {draft.status}
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleContinueDraft(draft)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-all active:scale-95"
+              >
+                Continue
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleDeleteReport(draft.id)}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-lg transition-all active:scale-95"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+</div>
 
         {/* Report History - Desktop Table */}
         <div className="hidden md:block bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">

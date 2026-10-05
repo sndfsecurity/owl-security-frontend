@@ -1,7 +1,14 @@
 
 "use client";
 
-import { useRef, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
+
 import {
   AlignmentType,
   BorderStyle,
@@ -22,20 +29,29 @@ type Incident = {
   status: string;
 };
 
+type VehicleRow = {
+  vehicleType: string;
+  customVehicleType: string;
+  inside: string;
+  outside: string;
+};
+
 const LOGO_PATH = "/LOGO.png";
 const DEFAULT_FONT_SIZE = 16;
+
 
 const STATUS_OPTIONS = [
   "तकनीकी समस्या",
   "सुरक्षित",
   "सामान्य",
-  "काही ही हरकत नाही",
+  "कोई भी हरकत नही",
   "Manual Entry",
 ];
 
 const DETAIL_OPTIONS = [
   "शॉप बंद हुई।",
   "शॉप शुरू हुई।",
+  "लापरवाही|",
   "Manual Entry",
 ];
 
@@ -46,11 +62,30 @@ const HEADING_OPTIONS = [
   "Manual Entry",
 ];
 
+const VEHICLE_TYPE_OPTIONS = [
+  "बाइक",
+  "स्कूटी",
+  "कार",
+  "पिकअप",
+  "छोटा हाथी",
+  "आयशर",
+  "टेम्पो",
+  "पानी का टैंकर",
+  "Manual Entry",
+];
+
 const createEmptyIncident = (): Incident => ({
   time: "",
   branch: "",
   details: "",
   status: "सामान्य",
+});
+
+const createEmptyVehicleRow = (): VehicleRow => ({
+  vehicleType: "",
+  customVehicleType: "",
+  inside: "",
+  outside: "",
 });
 
 const escapeHtml = (value: string) =>
@@ -65,16 +100,37 @@ const escapeHtml = (value: string) =>
     return entities[char];
   });
 
+  const formatReportDate = (value: string) => {
+  if (!value) return "";
+
+  const [year, month, day] = value.split("-");
+
+  if (!year || !month || !day) {
+    return value;
+  }
+
+  return `${day}-${month}-${year}`;
+};
+
 const isCustom = (value: string, options: string[]) =>
   value !== "" && !options.includes(value);
 
-type DailySecurityReportBuilderProps = {
-  onAttachPdf: (file: File) => void;
+export type DailySecurityReportBuilderRef = {
+  getDraftData: () => string;
 };
 
-export default function DailySecurityReportBuilder({
-  onAttachPdf,
-}: DailySecurityReportBuilderProps) {
+type DailySecurityReportBuilderProps = {
+  onAttachPdf: (file: File) => void;
+  initialDraftData?: string | null;
+};
+
+const DailySecurityReportBuilder = forwardRef<
+  DailySecurityReportBuilderRef,
+  DailySecurityReportBuilderProps
+>(function DailySecurityReportBuilder(
+  { onAttachPdf, initialDraftData },
+  ref
+) {
 
   const [shopName, setShopName] = useState("");
   const [reportDate, setReportDate] = useState("");
@@ -90,12 +146,116 @@ export default function DailySecurityReportBuilder({
   const [textColor, setTextColor] = useState("#111827");
   const [bold, setBold] = useState(false);
 
-  
-
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const savedRangeRef = useRef<Range | null>(null);
 
   const [attachingPdf, setAttachingPdf] = useState(false);
+
+  const [showSecondTable, setShowSecondTable] = useState(false);
+  const [vehicleRows, setVehicleRows] = useState<VehicleRow[]>([
+    createEmptyVehicleRow(),
+  ]);
+
+    useEffect(() => {
+
+      if (!initialDraftData) {
+          setShowSecondTable(false);
+          setVehicleRows([createEmptyVehicleRow()]);
+          return;
+        }
+
+    try {
+      const draft = JSON.parse(initialDraftData);
+
+      setShopName(draft.shopName ?? "");
+      setReportDate(draft.reportDate ?? "");
+      setPeriod(draft.period ?? "");
+      setColumnHeading(draft.columnHeading ?? "शाखा नं.");
+      setCustomHeading(draft.customHeading ?? "");
+      setSavedPreviewHtml(draft.savedPreviewHtml ?? "");
+
+      setIncidents(
+        Array.isArray(draft.incidents) && draft.incidents.length > 0
+          ? draft.incidents
+          : [createEmptyIncident()]
+      );
+
+      setShowSecondTable(Boolean(draft.showSecondTable));
+
+        setVehicleRows(
+          Array.isArray(draft.vehicleRows) && draft.vehicleRows.length > 0
+            ? draft.vehicleRows
+            : [createEmptyVehicleRow()]
+        );
+
+      setShowPreview(Boolean(draft.showPreview));
+
+      setFontSize(
+        typeof draft.fontSize === "number"
+          ? draft.fontSize
+          : DEFAULT_FONT_SIZE
+      );
+
+      setTextColor(
+        typeof draft.textColor === "string"
+          ? draft.textColor
+          : "#111827"
+      );
+
+      setBold(Boolean(draft.bold));
+    } catch (error) {
+      console.error("Failed to restore Daily Security Report draft:", error);
+    }
+  }, [initialDraftData]);
+
+
+    const getDraftData = () => {
+    const currentDocument = iframeRef.current?.contentDocument;
+
+    const currentPreviewHtml =
+      showPreview && currentDocument
+        ? currentDocument.documentElement.outerHTML
+        : savedPreviewHtml;
+
+    return JSON.stringify({
+      version: 1,
+      shopName,
+      reportDate,
+      period,
+      columnHeading,
+      customHeading,
+      savedPreviewHtml: currentPreviewHtml,
+      incidents,
+      showSecondTable,
+      vehicleRows,
+      showPreview,
+      fontSize,
+      textColor,
+      bold,
+    });
+  };
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      getDraftData,
+    }),
+    [
+      shopName,
+      reportDate,
+      period,
+      columnHeading,
+      customHeading,
+      savedPreviewHtml,
+      incidents,
+      showSecondTable,
+      vehicleRows,
+      showPreview,
+      fontSize,
+      textColor,
+      bold,
+    ]
+  );
 
   const updateIncident = (
     index: number,
@@ -108,6 +268,31 @@ export default function DailySecurityReportBuilder({
       )
     );
   };
+
+  const updateVehicleRow = (
+  index: number,
+  field: keyof VehicleRow,
+  value: string
+) => {
+  setVehicleRows((prev) =>
+    prev.map((item, i) =>
+      i === index ? { ...item, [field]: value } : item
+    )
+  );
+};
+
+const addVehicleRow = () => {
+  setVehicleRows((prev) => [
+    ...prev,
+    createEmptyVehicleRow(),
+  ]);
+};
+
+const removeVehicleRow = (index: number) => {
+  setVehicleRows((prev) =>
+    prev.filter((_, i) => i !== index)
+  );
+};
 
   const addIncident = () =>
     setIncidents((prev) => [...prev, createEmptyIncident()]);
@@ -150,7 +335,25 @@ export default function DailySecurityReportBuilder({
       )
       .join("");
 
-    return `<!DOCTYPE html>
+      const vehicleRowsHtml = showSecondTable
+  ? vehicleRows
+      .map((item) => {
+        const vehicleType =
+          item.vehicleType === "Manual Entry"
+            ? item.customVehicleType
+            : item.vehicleType;
+
+        return `
+          <tr>
+            <td>${escapeHtml(vehicleType || "-")}</td>
+            <td>${escapeHtml(item.inside || "-")}</td>
+            <td>${escapeHtml(item.outside || "-")}</td>
+          </tr>`;
+      })
+      .join("")
+  : "";
+
+return `<!DOCTYPE html>
 <html lang="hi">
 <head>
 <meta charset="UTF-8">
@@ -195,64 +398,154 @@ export default function DailySecurityReportBuilder({
   }
 
   .report-text {
-    font-family: "Nirmala UI", "Mangal", Arial, sans-serif;
-    font-size: ${DEFAULT_FONT_SIZE}pt;
-    font-weight: normal;
-    color: #111827;
-  }
+  font-family: "Nirmala UI", "Mangal", Arial, sans-serif;
+  color: #111827;
+}
 
-  h2 {
-    text-align: center;
-    margin: 0 0 22px;
-  }
+h2 {
+  text-align: center;
+  margin: 0 0 18px;
+  font-size: 20pt;
+  font-weight: 700;
+  line-height: 1.25;
+}
 
-  .date {
-    text-align: right;
-    margin-bottom: 18px;
-  }
+.date {
+  text-align: right;
+  margin-bottom: 12px;
+  font-size: 11.5pt;
+  font-weight: 500;
+  line-height: 1.4;
+}
 
-  .shop {
-    margin-bottom: 18px;
-  }
+.shop {
+  margin-bottom: 12px;
+  font-size: 14pt;
+  font-weight: 700;
+  line-height: 1.4;
+}
 
-  .title {
-    text-align: center;
-    margin: 0 0 18px;
-  }
+.title {
+  text-align: center;
+  margin: 0 0 16px;
+  font-size: 16pt;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
 
   table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  break-inside: auto;
+  page-break-inside: auto;
+}
+
+.secondary-table {
+  width: 60% !important;
+  margin-top: 40px !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  table-layout: fixed;
+}
+
+.secondary-table th,
+.secondary-table td {
+  padding: 7px 10px;
+  white-space: nowrap;
+  font-size: 11.5pt;
+  line-height: 1.4;
+}
+
+.secondary-table th:nth-child(1),
+.secondary-table td:nth-child(1) {
+  width: 44%;
+}
+
+.secondary-table th:nth-child(2),
+.secondary-table td:nth-child(2),
+.secondary-table th:nth-child(3),
+.secondary-table td:nth-child(3) {
+  width: 28%;
+}
+
+thead {
+  display: table-header-group !important;
+}
+
+tbody {
+  display: table-row-group;
+}
+
+th,
+td {
+  border: 1px solid #334155;
+  padding: 8px 6px;
+  text-align: center;
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font-size: 11.5pt;
+  line-height: 1.4;
+  break-inside: avoid !important;
+  page-break-inside: avoid !important;
+}
+
+th:nth-child(1), td:nth-child(1) { width: 15%; }
+
+th:nth-child(2), td:nth-child(2) { width: 20%; }
+
+th:nth-child(3), td:nth-child(3) {
+  width: 40%;
+  text-align: left;
+}
+
+th:nth-child(4), td:nth-child(4) {
+  width: 25%;
+}
+
+tr {
+  display: table-row;
+  break-inside: avoid !important;
+  page-break-inside: avoid !important;
+}
+
+@media print {
+  table {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
   }
 
-  th, td {
-    border: 1px solid #334155;
-    padding: 8px 6px;
-    text-align: center;
-    vertical-align: middle;
-    overflow-wrap: anywhere;
-    white-space: pre-wrap;
+  thead {
+    display: table-header-group !important;
   }
 
-  th:nth-child(1), td:nth-child(1) { width: 15%; }
-  th:nth-child(2), td:nth-child(2) { width: 20%; }
-  th:nth-child(3), td:nth-child(3) {
-    width: 40%;
-    text-align: left;
+  tbody {
+    display: table-row-group !important;
   }
-  th:nth-child(4), td:nth-child(4) { width: 25%; }
 
   tr {
-    break-inside: avoid;
-    page-break-inside: avoid;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 
-  .signature {
-    margin-top: 55px;
-    text-align: right;
-    break-inside: avoid;
+  th,
+  td {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
+}
+
+ .signature {
+  margin-top: 42px;
+  text-align: right;
+  font-size: 11.5pt;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #1f2937;
+  break-inside: avoid;
+}
 
   @media print {
     body {
@@ -274,26 +567,44 @@ export default function DailySecurityReportBuilder({
 <body>
 <div class="page">
   <h2 class="report-text">जय हिन्द</h2>
-  <div class="date report-text">दिनांक: ${escapeHtml(reportDate)}</div>
+  <div class="date report-text">दिनांक: ${escapeHtml(formatReportDate(reportDate))}</div>
   <div class="shop report-text">${escapeHtml(shopName)}</div>
   <div class="title report-text">दैनिक सुरक्षा रिपोर्ट${period ? " - " + escapeHtml(period) : ""}</div>
 
-  <table>
-    <thead>
-      <tr>
-        <th class="report-text">समय</th>
-        <th class="report-text">${escapeHtml(heading)}</th>
-        <th class="report-text">घटना विवरण</th>
-        <th class="report-text">सुरक्षा स्थिति</th>
-      </tr>
-    </thead>
-    <tbody>${rows}</tbody>
-  </table>
+  <table class="main-report-table">
+  <thead>
+    <tr>
+      <th class="report-text">समय</th>
+      <th class="report-text">${escapeHtml(heading)}</th>
+      <th class="report-text">घटना विवरण</th>
+      <th class="report-text">सुरक्षा स्थिति</th>
+    </tr>
+  </thead>
+  <tbody>${rows}</tbody>
+</table>
 
-  <div class="signature report-text">
-    SENIOR OFFICER<br>
-    Owl Security Surveillance
-  </div>
+${
+  showSecondTable
+    ? `
+      <table class="secondary-table">
+        <thead>
+          <tr>
+            <th class="report-text">वाहन प्रकार</th>
+            <th class="report-text">अंदर आए</th>
+            <th class="report-text">बाहर गए</th>
+          </tr>
+        </thead>
+        <tbody>${vehicleRowsHtml}</tbody>
+      </table>
+    `
+    : ""
+}
+
+<div class="signature report-text">
+  <strong>SENIOR OFFICER</strong><br>
+  Owl Security Surveillance
+</div>
+
 </div>
 </body>
 </html>`;
@@ -304,7 +615,7 @@ export default function DailySecurityReportBuilder({
   if (!validate()) return;
 
   // If an earlier preview exists, preserve its formatting
-  // and add any new rows from the form.
+  // and update the report data from the form.
   if (savedPreviewHtml) {
     const savedDoc = new DOMParser().parseFromString(
       savedPreviewHtml,
@@ -316,24 +627,158 @@ export default function DailySecurityReportBuilder({
       "text/html"
     );
 
-    const savedBody = savedDoc.querySelector("tbody");
-    const freshBody = freshDoc.querySelector("tbody");
+    const savedMainTable = savedDoc.querySelector(
+      ".main-report-table"
+    );
+
+    const freshMainTable = freshDoc.querySelector(
+      ".main-report-table"
+    );
+
+    // Preserve the existing first-table formatting
+    // and add any newly added rows.
+    const savedBody = savedMainTable?.querySelector("tbody");
+    const freshBody = freshMainTable?.querySelector("tbody");
 
     if (savedBody && freshBody) {
       const savedRows = savedBody.querySelectorAll("tr");
       const freshRows = freshBody.querySelectorAll("tr");
 
       for (let i = savedRows.length; i < freshRows.length; i++) {
-        savedBody.appendChild(freshRows[i].cloneNode(true));
+        savedBody.appendChild(
+          freshRows[i].cloneNode(true)
+        );
+      }
+    }
+
+    // Handle the optional second table.
+   
+    const savedSecondTable = savedDoc.querySelector(
+  ".secondary-table"
+);
+
+const freshSecondTable = freshDoc.querySelector(
+  ".secondary-table"
+);
+
+if (freshSecondTable) {
+  // If the second table already exists in the preview,
+  // preserve the existing table and its formatting.
+  if (savedSecondTable) {
+    const savedBody =
+      savedSecondTable.querySelector("tbody");
+
+    const freshBody =
+      freshSecondTable.querySelector("tbody");
+
+    if (savedBody && freshBody) {
+      const savedRows = Array.from(
+        savedBody.querySelectorAll("tr")
+      );
+
+      const freshRows = Array.from(
+        freshBody.querySelectorAll("tr")
+      );
+
+      // Update existing rows while keeping the
+      // existing table structure/formatting.
+      const commonRows = Math.min(
+        savedRows.length,
+        freshRows.length
+      );
+
+      for (let i = 0; i < commonRows; i++) {
+        const savedCells = Array.from(
+          savedRows[i].querySelectorAll("td")
+        );
+
+        const freshCells = Array.from(
+          freshRows[i].querySelectorAll("td")
+        );
+
+        const commonCells = Math.min(
+          savedCells.length,
+          freshCells.length
+        );
+
+        for (let j = 0; j < commonCells; j++) {
+          const freshText =
+            freshCells[j].textContent || "";
+
+          const textNodes: Text[] = [];
+
+          const walker =
+            savedDoc.createTreeWalker(
+              savedCells[j],
+              NodeFilter.SHOW_TEXT
+            );
+
+          let node: Node | null;
+
+          while ((node = walker.nextNode())) {
+            textNodes.push(node as Text);
+          }
+
+          if (textNodes.length > 0) {
+            textNodes[0].textContent =
+              freshText;
+
+            for (
+              let k = 1;
+              k < textNodes.length;
+              k++
+            ) {
+              textNodes[k].textContent = "";
+            }
+          } else {
+            savedCells[j].textContent =
+              freshText;
+          }
+        }
       }
 
-      setSavedPreviewHtml(savedDoc.documentElement.outerHTML);
+      // Add newly created rows.
+      for (
+        let i = savedRows.length;
+        i < freshRows.length;
+        i++
+      ) {
+        savedBody.appendChild(
+          freshRows[i].cloneNode(true)
+        );
+      }
+
+      // Remove rows deleted by the user.
+      while (
+        savedBody.querySelectorAll("tr").length >
+        freshRows.length
+      ) {
+        const rows =
+          savedBody.querySelectorAll("tr");
+
+        rows[rows.length - 1].remove();
+      }
     }
+  } else if (savedMainTable) {
+    // First time the second table is added.
+    savedMainTable.after(
+      freshSecondTable.cloneNode(true)
+    );
+  }
+} else if (savedSecondTable) {
+  // User removed the second table.
+  savedSecondTable.remove();
+}
+
+    setSavedPreviewHtml(
+      savedDoc.documentElement.outerHTML
+    );
   }
 
   setShowPreview(true);
 };
 
+ 
   const rememberSelection = () => {
     const doc = iframeRef.current?.contentDocument;
     const selection = doc?.getSelection();
@@ -422,6 +867,430 @@ export default function DailySecurityReportBuilder({
 
   const getPreviewDocument = () =>
     iframeRef.current?.contentDocument ?? null;
+
+  const buildPaginatedReportFrame = async (
+  sourceDoc: globalThis.Document
+) => {
+  const pageWidth = 794;
+  const pageHeight = 1123;
+  const pageMargin = 68;
+
+const sourceTable = sourceDoc.querySelector(".main-report-table");
+
+const sourceThead = sourceTable?.querySelector("thead");
+
+const sourceRows = sourceTable
+  ? Array.from(sourceTable.querySelectorAll("tbody tr"))
+  : [];
+
+const sourceSecondTable = sourceDoc.querySelector(
+  ".secondary-table"
+);
+
+  const iframe = document.createElement("iframe");
+
+  iframe.style.position = "fixed";
+  iframe.style.left = "-10000px";
+  iframe.style.top = "0";
+  iframe.style.width = `${pageWidth}px`;
+  iframe.style.height = `${pageHeight}px`;
+  iframe.style.border = "0";
+  iframe.style.visibility = "hidden";
+
+  const sourceHeadHtml = sourceDoc.head?.innerHTML || "";
+
+  const paginationStyle = `
+    <style>
+      @page {
+        size: A4;
+        margin: 0 !important;
+      }
+
+      html,
+      body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+      }
+
+      body::before {
+        display: none !important;
+      }
+
+      .pagination-root {
+        width: ${pageWidth}px;
+        margin: 0;
+        padding: 0;
+      }
+
+      .pagination-page {
+        position: relative;
+        width: ${pageWidth}px;
+        height: ${pageHeight}px;
+        box-sizing: border-box;
+        padding: ${pageMargin}px;
+        margin: 0;
+        background: #ffffff;
+        overflow: hidden;
+        break-after: page;
+        page-break-after: always;
+      }
+
+      .pagination-page:last-child {
+        break-after: auto;
+        page-break-after: auto;
+      }
+
+      .pagination-content {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        height: ${pageHeight - pageMargin * 2}px;
+        box-sizing: border-box;
+      }
+
+      .pagination-watermark {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        background-image: url("${LOGO_PATH}");
+        background-repeat: no-repeat;
+        background-position: center center;
+        background-size: 85% auto;
+        opacity: 0.07;
+        pointer-events: none;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        break-inside: auto;
+        page-break-inside: auto;
+      }
+
+      .secondary-table {
+            width: 60% !important;
+            margin-top: 40px !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            table-layout: fixed;
+          }
+
+          .secondary-table th,
+          .secondary-table td {
+            padding: 7px 10px;
+            white-space: nowrap;
+          }
+
+          .secondary-table th:nth-child(1),
+          .secondary-table td:nth-child(1) {
+            width: 44%;
+          }
+
+          .secondary-table th:nth-child(2),
+          .secondary-table td:nth-child(2),
+          .secondary-table th:nth-child(3),
+          .secondary-table td:nth-child(3) {
+            width: 28%;
+          }
+
+      thead {
+        display: table-header-group !important;
+      }
+
+      tbody {
+        display: table-row-group !important;
+      }
+
+      tr {
+        display: table-row;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+
+      th,
+      td {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+
+      @media print {
+        html,
+        body {
+          background: #ffffff !important;
+        }
+
+        .pagination-page {
+          break-after: page !important;
+          page-break-after: always !important;
+        }
+
+        .pagination-page:last-child {
+          break-after: auto !important;
+          page-break-after: auto !important;
+        }
+      }
+    </style>
+  `;
+
+  iframe.srcdoc = `
+    <!DOCTYPE html>
+    <html lang="hi">
+      <head>
+        ${sourceHeadHtml}
+        ${paginationStyle}
+      </head>
+      <body>
+        <div class="pagination-root" id="paginationRoot"></div>
+      </body>
+    </html>
+  `;
+
+  await new Promise<void>((resolve, reject) => {
+    iframe.onload = () => resolve();
+
+    iframe.onerror = () =>
+      reject(new Error("Unable to create paginated report frame."));
+
+    document.body.appendChild(iframe);
+  });
+
+  const reportDoc = iframe.contentDocument;
+
+  if (!reportDoc) {
+    iframe.remove();
+    throw new Error("Unable to access paginated report document.");
+  }
+
+  if (reportDoc.fonts?.ready) {
+    await reportDoc.fonts.ready;
+  }
+
+  const root = reportDoc.getElementById("paginationRoot");
+
+  if (!root) {
+    iframe.remove();
+    throw new Error("Pagination root not found.");
+  }
+
+  const sourceTopSelectors = [
+    "h2",
+    ".date",
+    ".shop",
+    ".title",
+  ];
+
+  const createPage = (
+    includeTopContent: boolean,
+    includeTable: boolean
+  ) => {
+    const page = reportDoc.createElement("section");
+    page.className = "pagination-page";
+
+    const watermark = reportDoc.createElement("div");
+    watermark.className = "pagination-watermark";
+
+    const content = reportDoc.createElement("div");
+    content.className = "pagination-content";
+
+    page.appendChild(watermark);
+    page.appendChild(content);
+
+    if (includeTopContent) {
+      sourceTopSelectors.forEach((selector) => {
+        const sourceElement = sourceDoc.querySelector(selector);
+
+        if (sourceElement) {
+          const cloned = reportDoc.importNode(
+            sourceElement,
+            true
+          );
+
+          content.appendChild(cloned);
+        }
+      });
+    }
+
+    let table: HTMLTableElement | null = null;
+    let tbody: HTMLTableSectionElement | null = null;
+
+    if (includeTable && sourceTable) {
+      table = reportDoc.importNode(
+        sourceTable.cloneNode(true),
+        true
+      ) as HTMLTableElement;
+
+      const clonedThead = table.querySelector("thead");
+      const clonedTbody = table.querySelector("tbody");
+
+      if (clonedThead && sourceThead) {
+        clonedThead.replaceWith(
+          reportDoc.importNode(sourceThead.cloneNode(true), true)
+        );
+      }
+
+      if (!clonedTbody) {
+        tbody = reportDoc.createElement("tbody");
+        table.appendChild(tbody);
+      } else {
+        tbody = clonedTbody;
+        tbody.innerHTML = "";
+      }
+
+      content.appendChild(table);
+    }
+
+    root.appendChild(page);
+
+    return {
+      page,
+      content,
+      table,
+      tbody,
+    };
+  };
+
+  let currentPage = createPage(true, true);
+
+  const getBottomPosition = (
+    element: HTMLElement,
+    page: HTMLElement
+  ) => {
+    const elementRect = element.getBoundingClientRect();
+    const pageRect = page.getBoundingClientRect();
+
+    return elementRect.bottom - pageRect.top;
+  };
+
+  for (const sourceRow of sourceRows) {
+    if (!currentPage.tbody || !currentPage.table) {
+      continue;
+    }
+
+    const clonedRow = reportDoc.importNode(
+      sourceRow.cloneNode(true),
+      true
+    ) as HTMLTableRowElement;
+
+    currentPage.tbody.appendChild(clonedRow);
+
+    const tableBottom = getBottomPosition(
+      currentPage.table,
+      currentPage.page
+    );
+
+    const allowedBottom = pageHeight - pageMargin;
+
+    if (
+      tableBottom > allowedBottom &&
+      currentPage.tbody.children.length > 1
+    ) {
+      currentPage.tbody.removeChild(clonedRow);
+
+      currentPage = createPage(false, true);
+
+      if (currentPage.tbody) {
+        currentPage.tbody.appendChild(clonedRow);
+      }
+    }
+  }
+
+    // Add the optional second table first.
+  // It must always come before the signature.
+  if (sourceSecondTable) {
+    const secondTableClone = reportDoc.importNode(
+      sourceSecondTable.cloneNode(true),
+      true
+    ) as HTMLTableElement;
+
+    secondTableClone.style.breakInside = "avoid";
+    secondTableClone.style.pageBreakInside = "avoid";
+
+    const allowedBottom = pageHeight - pageMargin;
+
+    currentPage.content.appendChild(secondTableClone);
+
+    const secondTableBottom = getBottomPosition(
+      secondTableClone,
+      currentPage.page
+    );
+
+    // If the complete second table does not fit,
+    // move the whole second table to the next page.
+    if (secondTableBottom > allowedBottom) {
+      currentPage.content.removeChild(secondTableClone);
+
+      const secondTablePage = createPage(
+        false,
+        false
+      );
+
+      const secondTableCopy = reportDoc.importNode(
+        sourceSecondTable.cloneNode(true),
+        true
+      ) as HTMLTableElement;
+
+      secondTableCopy.style.breakInside = "avoid";
+      secondTableCopy.style.pageBreakInside = "avoid";
+
+      secondTablePage.content.appendChild(
+        secondTableCopy
+      );
+
+      currentPage = secondTablePage;
+    }
+  }
+
+  // Signature must ALWAYS come after the second table.
+  // If there is no second table, it simply comes after
+  // the first table.
+  const sourceSignature =
+    sourceDoc.querySelector(".signature");
+
+  if (sourceSignature) {
+    const clonedSignature = reportDoc.importNode(
+      sourceSignature.cloneNode(true),
+      true
+    ) as HTMLElement;
+
+    const allowedBottom = pageHeight - pageMargin;
+
+    currentPage.content.appendChild(clonedSignature);
+
+    const signatureBottom = getBottomPosition(
+      clonedSignature,
+      currentPage.page
+    );
+
+    // If the signature does not fit after the table,
+    // move only the signature to the next page.
+    if (signatureBottom > allowedBottom) {
+      currentPage.content.removeChild(
+        clonedSignature
+      );
+
+      const signaturePage = createPage(
+        false,
+        false
+      );
+
+      const signatureCopy = reportDoc.importNode(
+        sourceSignature.cloneNode(true),
+        true
+      ) as HTMLElement;
+
+      signaturePage.content.appendChild(
+        signatureCopy
+      );
+
+      currentPage = signaturePage;
+    }
+  }
+
+  return iframe;
+
+};
 
   const makeWordRuns = (
     node: Node,
@@ -591,81 +1460,111 @@ export default function DailySecurityReportBuilder({
     URL.revokeObjectURL(url);
   };
 
-  const downloadPdf = () => {
-    if (!validate()) return;
+  const downloadPdf = async () => {
+  if (!validate()) return;
 
-    const doc = getPreviewDocument();
-    if (!doc) {
-      alert("Please open the report preview first.");
-      return;
-    }
+  const sourceDoc = getPreviewDocument();
 
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) {
-      alert("Please allow pop-ups to generate the PDF.");
-      return;
+  if (!sourceDoc) {
+    alert("Please open the report preview first.");
+    return;
+  }
+
+  const printWindow = window.open("", "_blank");
+
+  if (!printWindow) {
+    alert("Please allow pop-ups to generate the PDF.");
+    return;
+  }
+
+  let paginatedFrame: HTMLIFrameElement | null = null;
+
+  try {
+    paginatedFrame =
+      await buildPaginatedReportFrame(sourceDoc);
+
+    const paginatedDoc =
+      paginatedFrame.contentDocument;
+
+    if (!paginatedDoc) {
+      throw new Error("Unable to prepare report for printing.");
     }
 
     printWindow.document.open();
+
     printWindow.document.write(
-      "<!DOCTYPE html>" + doc.documentElement.outerHTML
+      "<!DOCTYPE html>" +
+        paginatedDoc.documentElement.outerHTML
     );
+
     printWindow.document.close();
 
     printWindow.onload = () => {
-      printWindow.focus();
-      printWindow.print();
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+      }, 300);
     };
-  };
+  } catch (error) {
+    console.error("PDF generation failed:", error);
 
-  
-  const attachPdf = async () => {
+    printWindow.close();
+
+    alert(
+      "Unable to generate the PDF. Please try again."
+    );
+  } finally {
+    if (paginatedFrame) {
+      setTimeout(() => {
+        paginatedFrame?.remove();
+      }, 1000);
+    }
+  }
+};
+
+const attachPdf = async () => {
   if (!validate()) return;
 
-  const doc = getPreviewDocument();
+  const sourceDoc = getPreviewDocument();
 
-  if (!doc) {
+  if (!sourceDoc) {
     alert("Please open the report preview first.");
     return;
   }
 
   setAttachingPdf(true);
 
-  const originalMargin = doc.body.style.margin;
+  let paginatedFrame: HTMLIFrameElement | null = null;
 
   try {
-    // Wait for fonts and images in the report preview.
-    if (doc.fonts?.ready) {
-      await doc.fonts.ready;
+    paginatedFrame =
+      await buildPaginatedReportFrame(sourceDoc);
+
+    const reportDoc =
+      paginatedFrame.contentDocument;
+
+    if (!reportDoc) {
+      throw new Error(
+        "Unable to access paginated report document."
+      );
     }
 
-    const images = Array.from(doc.images);
-    await Promise.all(
-      images.map((image) => {
-        if (image.complete) return Promise.resolve();
+    const pages = Array.from(
+      reportDoc.querySelectorAll(
+        ".pagination-page"
+      )
+    ) as HTMLElement[];
 
-        return new Promise<void>((resolve) => {
-          image.onload = () => resolve();
-          image.onerror = () => resolve();
-        });
-      })
-    );
+    if (pages.length === 0) {
+      throw new Error(
+        "No report pages were created."
+      );
+    }
 
-    // Use the same HTML document that the user edited.
-  const html2canvas = (await import("html2canvas-pro")).default;
+    const html2canvas =
+      (await import("html2canvas-pro")).default;
+
     const { jsPDF } = await import("jspdf");
-
-    // Match the print layout's zero body margin.
-    doc.body.style.margin = "0";
-
-    const canvas = await html2canvas(doc.body, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#ffffff",
-      logging: false,
-      windowWidth: doc.documentElement.clientWidth,
-      windowHeight: doc.documentElement.clientHeight,
-    });
 
     const pdf = new jsPDF({
       orientation: "portrait",
@@ -673,71 +1572,58 @@ export default function DailySecurityReportBuilder({
       format: "a4",
     });
 
-    const pageWidth = 210;
-    const pageHeight = 297;
-    const margin = 18;
+    for (let index = 0; index < pages.length; index++) {
+      const page = pages[index];
 
-    const contentWidth = pageWidth - margin * 2;
-    const contentHeight = pageHeight - margin * 2;
-
-    // Convert the canvas width to the PDF's printable width.
-    const pixelsPerMm = canvas.width / contentWidth;
-    const pageSliceHeight = Math.floor(
-      contentHeight * pixelsPerMm
-    );
-
-    let y = 0;
-    let pageNumber = 0;
-
-    while (y < canvas.height) {
-      const sliceHeight = Math.min(
-        pageSliceHeight,
-        canvas.height - y
-      );
-
-      const pageCanvas = document.createElement("canvas");
-      pageCanvas.width = canvas.width;
-      pageCanvas.height = sliceHeight;
-
-      const context = pageCanvas.getContext("2d");
-
-      if (!context) {
-        throw new Error("Unable to create PDF canvas");
+      if (reportDoc.fonts?.ready) {
+        await reportDoc.fonts.ready;
       }
 
-      context.fillStyle = "#ffffff";
-      context.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-
-      context.drawImage(
-        canvas,
-        0,
-        y,
-        canvas.width,
-        sliceHeight,
-        0,
-        0,
-        canvas.width,
-        sliceHeight
+      const images = Array.from(
+        reportDoc.images
       );
 
-      if (pageNumber > 0) {
+      await Promise.all(
+        images.map((image) => {
+          if (image.complete) {
+            return Promise.resolve();
+          }
+
+          return new Promise<void>((resolve) => {
+            image.onload = () => resolve();
+            image.onerror = () => resolve();
+          });
+        })
+      );
+
+      const canvas = await html2canvas(page, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+        width: 794,
+        height: 1123,
+        windowWidth: 794,
+        windowHeight: 1123,
+      });
+
+      if (index > 0) {
         pdf.addPage();
       }
 
-      const imageData = pageCanvas.toDataURL("image/jpeg", 0.98);
-      const imageHeight = sliceHeight / pixelsPerMm;
+      const imageData = canvas.toDataURL(
+        "image/jpeg",
+        0.98
+      );
 
       pdf.addImage(
         imageData,
         "JPEG",
-        margin,
-        margin,
-        contentWidth,
-        imageHeight
+        0,
+        0,
+        210,
+        297
       );
-
-      y += sliceHeight;
-      pageNumber++;
     }
 
     const pdfBlob = pdf.output("blob");
@@ -745,18 +1631,30 @@ export default function DailySecurityReportBuilder({
     const pdfFile = new File(
       [pdfBlob],
       `Daily-Security-Report-${reportDate}.pdf`,
-      { type: "application/pdf" }
+      {
+        type: "application/pdf",
+      }
     );
 
     onAttachPdf(pdfFile);
   } catch (error) {
-    console.error("PDF attachment failed:", error);
-    alert("Unable to generate the PDF. Please try again.");
+    console.error(
+      "PDF attachment failed:",
+      error
+    );
+
+    alert(
+      "Unable to generate the PDF. Please try again."
+    );
   } finally {
-    doc.body.style.margin = originalMargin;
+    if (paginatedFrame) {
+      paginatedFrame.remove();
+    }
+
     setAttachingPdf(false);
   }
 };
+
 
   const inputClass =
     "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800";
@@ -991,6 +1889,173 @@ export default function DailySecurityReportBuilder({
             </div>
           </div>
 
+          <div className="mt-5 rounded-lg border border-slate-200 bg-white p-3">
+                {!showSecondTable ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowSecondTable(true)}
+                    className="rounded-lg bg-slate-600 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+                  >
+                    + Add Second Table
+                  </button>
+                ) : (
+                  <>
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="text-sm font-semibold text-slate-700">
+                        Vehicle Movement
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowSecondTable(false);
+                          setVehicleRows([createEmptyVehicleRow()]);
+                        }}
+                        className="text-sm font-medium text-red-600"
+                      >
+                        Remove Second Table
+                      </button>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr>
+                            <th className="border border-slate-300 px-3 py-2 text-left text-sm">
+                              वाहन प्रकार
+                            </th>
+                            <th className="border border-slate-300 px-3 py-2 text-center text-sm">
+                              अंदर आए
+                            </th>
+                            <th className="border border-slate-300 px-3 py-2 text-center text-sm">
+                              बाहर गए
+                            </th>
+                            <th className="border border-slate-300 px-3 py-2 text-center text-sm">
+                              Action
+                            </th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          {vehicleRows.map((row, index) => (
+                            <tr key={index}>
+                              <td className="border border-slate-300 p-2">
+                                <select
+                                  value={row.vehicleType}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+
+                                    updateVehicleRow(
+                                      index,
+                                      "vehicleType",
+                                      value
+                                    );
+
+                                    if (value !== "Manual Entry") {
+                                      updateVehicleRow(
+                                        index,
+                                        "customVehicleType",
+                                        ""
+                                      );
+                                    }
+                                  }}
+                                  className={inputClass}
+                                >
+                                  <option value="">
+                                    Select vehicle type
+                                  </option>
+
+                                  {VEHICLE_TYPE_OPTIONS.map((option) => (
+                                    <option
+                                      key={option}
+                                      value={option}
+                                    >
+                                      {option}
+                                    </option>
+                                  ))}
+                                </select>
+
+                                {row.vehicleType === "Manual Entry" && (
+                                  <input
+                                    value={row.customVehicleType}
+                                    onChange={(e) =>
+                                      updateVehicleRow(
+                                        index,
+                                        "customVehicleType",
+                                        e.target.value
+                                      )
+                                    }
+                                    placeholder="Enter vehicle type"
+                                    className={`${inputClass} mt-2`}
+                                  />
+                                )}
+                              </td>
+
+                              <td className="border border-slate-300 p-2">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={row.inside}
+                                  onChange={(e) =>
+                                    updateVehicleRow(
+                                      index,
+                                      "inside",
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder="0"
+                                  className={`${inputClass} text-center`}
+                                />
+                              </td>
+
+                              <td className="border border-slate-300 p-2">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={row.outside}
+                                  onChange={(e) =>
+                                    updateVehicleRow(
+                                      index,
+                                      "outside",
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder="0"
+                                  className={`${inputClass} text-center`}
+                                />
+                              </td>
+
+                              <td className="border border-slate-300 p-2 text-center">
+                                {vehicleRows.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      removeVehicleRow(index)
+                                    }
+                                    className="text-sm font-medium text-red-600"
+                                  >
+                                    Remove
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={addVehicleRow}
+                      className="mt-3 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                    >
+                      + Add Vehicle Row
+                    </button>
+                  </>
+                )}
+              </div>
+
+
           <div className="mt-5 flex flex-wrap gap-3">
             <button
               type="button"
@@ -1153,4 +2218,6 @@ export default function DailySecurityReportBuilder({
       )}
     </div>
   );
-}
+});
+
+export default DailySecurityReportBuilder;

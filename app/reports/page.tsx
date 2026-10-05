@@ -3,11 +3,16 @@
 
 import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { getReports, getReportsByDateRange, downloadImage } from "@/services/reportService";
 import { getClients } from "@/services/clientService";
 import { FiDownload } from "react-icons/fi";
 import NotesViewer from "@/components/NotesViewer";
 import dynamic from "next/dynamic";
+
+import {
+  getSubmittedReports,
+  getSubmittedReportsByDateRange,
+  downloadImage,
+} from "@/services/reportService";
 
 const PdfViewer = dynamic(
   () => import("@/components/PdfViewer"),
@@ -41,7 +46,12 @@ export default function ReportsPage() {
   const loadReports = async (currentPage = page) => {
     try {
       setLoading(true);
-      const reportsData = await getReports(currentPage, 8);
+
+      const reportsData = await getSubmittedReports(
+        currentPage,
+        8
+      );
+
       const clientsData = await getClients();
 
       setReports(reportsData?.content || []);
@@ -73,10 +83,13 @@ export default function ReportsPage() {
     }
 
     try {
-      const data = await getReportsByDateRange(
+     
+      const data = await getSubmittedReportsByDateRange(
         fromDate,
         toDate,
-        selectedClient ? Number(selectedClient) : undefined,
+        selectedClient
+          ? Number(selectedClient)
+          : undefined,
         0,
         10
       );

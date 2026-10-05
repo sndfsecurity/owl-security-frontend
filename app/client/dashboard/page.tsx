@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import ClientLayout from "@/components/layout/ClientLayout";
 import { getClientByUserId } from "@/services/clientService";
-import { getReportsByClientId } from "@/services/reportService";
+import { getSubmittedReportsByClientId } from "@/services/reportService";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -31,9 +31,9 @@ export default function ClientDashboardPage() {
         setClient(clientData);
 
         const reportData =
-            await getReportsByClientId(
-              clientData.id
-            );
+          await getSubmittedReportsByClientId(
+            clientData.id
+          );
 
           console.log(reportData);
 

@@ -19,9 +19,9 @@ import {
 } from "@/services/clientService";
 
 import {
-  getReportsByClientId,
-  getReportsByDateRange,
-  downloadImage
+  getSubmittedReportsByClientId,
+  getSubmittedReportsByDateRange,
+  downloadImage,
 } from "@/services/reportService";
 
 import { FiDownload } from "react-icons/fi";
@@ -87,7 +87,7 @@ const statusFilter =
         setClient(clientData);
 
         const reportData =
-            await getReportsByClientId(
+            await getSubmittedReportsByClientId(
               clientData.id,
               page,
               5
@@ -95,7 +95,7 @@ const statusFilter =
 
           setReports(reportData.content || []);
 
-          setTotalPages(reportData.totalPages || 0); 
+          setTotalPages(reportData.totalPages || 0);
 
 
       } catch (error) {
@@ -139,7 +139,7 @@ const statusFilter =
     setPage(0);
 
     const data =
-      await getReportsByDateRange(
+      await getSubmittedReportsByDateRange(
         fromDate,
         toDate,
         client.id,
@@ -168,12 +168,12 @@ const handleClear = async () => {
   
   setPage(0);
 
-    const reportData =
-      await getReportsByClientId(
-        client.id,
-        0,
-        5
-      );
+      const reportData =
+          await getSubmittedReportsByClientId(
+            client.id,
+            0,
+            5
+          );
 
     setReports(reportData.content || []);
 
