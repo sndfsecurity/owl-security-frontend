@@ -373,22 +373,40 @@ const removeVehicleRow = (index: number) => {
       )
       .join("");
 
-      const vehicleRowsHtml = showSecondTable
-  ? vehicleRows
-      .map((item) => {
-        const vehicleType =
-          item.vehicleType === "Manual Entry"
-            ? item.customVehicleType
-            : item.vehicleType;
+    const totalInside = vehicleRows.reduce(
+  (total, row) => total + (Number(row.inside) || 0),
+  0
+);
 
-        return `
-          <tr>
-            <td>${escapeHtml(vehicleType || "-")}</td>
-            <td>${escapeHtml(item.inside || "-")}</td>
-            <td>${escapeHtml(item.outside || "-")}</td>
-          </tr>`;
-      })
-      .join("")
+const totalOutside = vehicleRows.reduce(
+  (total, row) => total + (Number(row.outside) || 0),
+  0
+);
+
+const vehicleRowsHtml = showSecondTable
+  ? `
+      ${vehicleRows
+        .map((item) => {
+          const vehicleType =
+            item.vehicleType === "Manual Entry"
+              ? item.customVehicleType
+              : item.vehicleType;
+
+          return `
+            <tr>
+              <td>${escapeHtml(vehicleType || "-")}</td>
+              <td>${escapeHtml(item.inside || "-")}</td>
+              <td>${escapeHtml(item.outside || "-")}</td>
+            </tr>`;
+        })
+        .join("")}
+
+      <tr class="vehicle-total-row">
+        <td><strong>Total:</strong></td>
+        <td><strong>${totalInside}</strong></td>
+        <td><strong>${totalOutside}</strong></td>
+      </tr>
+    `
   : "";
 
 return `<!DOCTYPE html>
@@ -486,6 +504,11 @@ h2 {
   margin-left: 0 !important;
   margin-right: 0 !important;
   table-layout: fixed;
+}
+
+.vehicle-total-row td {
+  font-weight: 700;
+  background: #f8fafc;
 }
 
 .secondary-table th,
@@ -1155,6 +1178,11 @@ const sourceSecondTable = sourceDoc.querySelector(
             margin-right: 0 !important;
             table-layout: fixed;
           }
+
+          .vehicle-total-row td {
+              font-weight: 700;
+              background: #f8fafc;
+            }
 
           .secondary-table th,
           .secondary-table td {
@@ -2264,6 +2292,29 @@ const attachPdf = async () => {
                             </td>
                           </tr>
                         ))}
+
+                        <tr className="bg-slate-50 font-semibold">
+                          <td className="border border-slate-300 p-2 text-left">
+                            Total:
+                          </td>
+
+                          <td className="border border-slate-300 p-2 text-center">
+                            {vehicleRows.reduce(
+                              (total, row) => total + (Number(row.inside) || 0),
+                              0
+                            )}
+                          </td>
+
+                          <td className="border border-slate-300 p-2 text-center">
+                            {vehicleRows.reduce(
+                              (total, row) => total + (Number(row.outside) || 0),
+                              0
+                            )}
+                          </td>
+
+                          <td className="border border-slate-300 p-2"></td>
+                        </tr>
+
                       </tbody>
                     </table>
                   </div>
