@@ -14,17 +14,41 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => {
+ useEffect(() => {
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
 
-  if (token && role === "ADMIN") {
-    window.location.href = "/dashboard";
+  if (!token || !role) {
     return;
   }
 
-  if (token && role === "CLIENT") {
-    window.location.href = "/client/dashboard";
+  try {
+    const payload = JSON.parse(
+      atob(
+        token
+          .split(".")[1]
+          .replace(/-/g, "+")
+          .replace(/_/g, "/")
+      )
+    );
+
+    const currentTime = Math.floor(Date.now() / 1000);
+
+    if (payload.exp && payload.exp <= currentTime) {
+      localStorage.clear();
+      return;
+    }
+
+    if (role === "ADMIN") {
+      window.location.href = "/dashboard";
+      return;
+    }
+
+    if (role === "CLIENT") {
+      window.location.href = "/client/dashboard";
+    }
+  } catch {
+    localStorage.clear();
   }
 }, []);
 
