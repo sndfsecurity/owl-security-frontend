@@ -1,17 +1,32 @@
 // app/login/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { login } from "@/services/authService";
 import styles from "./login.module.css";
 
 export default function LoginPage() {
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
+
+  if (token && role === "ADMIN") {
+    window.location.href = "/dashboard";
+    return;
+  }
+
+  if (token && role === "CLIENT") {
+    window.location.href = "/client/dashboard";
+  }
+}, []);
 
   const handleLogin = async () => {
     try {
