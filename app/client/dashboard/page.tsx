@@ -6,6 +6,8 @@ import { getClientByUserId } from "@/services/clientService";
 import { getSubmittedReportsByClientId } from "@/services/reportService";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { enablePushNotifications } from "@/services/notificationService";
+
 
 export default function ClientDashboardPage() {
   const [name, setName] = useState("");
@@ -65,6 +67,32 @@ const incidentReports = reportList.filter(
   (r) => r.status === "INCIDENT"
 ).length;
 
+
+const handleEnableNotifications = async () => {
+  try {
+    const subscription =
+      await enablePushNotifications();
+
+    console.log(
+      "Push subscription created:",
+      subscription.toJSON()
+    );
+
+    alert("Notifications enabled successfully.");
+  } catch (error) {
+    console.error(
+      "Notification setup failed:",
+      error
+    );
+
+    alert(
+      error instanceof Error
+        ? error.message
+        : "Failed to enable notifications."
+    );
+  }
+};
+
   return (
     <ClientLayout>
 
@@ -72,6 +100,14 @@ const incidentReports = reportList.filter(
       <h1 className="text-3xl font-bold text-slate-800 mb-6">
         Client Dashboard
       </h1>
+
+      <button
+        type="button"
+        onClick={handleEnableNotifications}
+        className="rounded-lg bg-blue-600 px-4 py-2 text-white"
+      >
+        Enable Notifications
+      </button>
 
       {/* Welcome Card */}
       <div className="bg-white p-6 rounded-xl shadow mb-6 border-l-4 border-blue-600">
