@@ -62,6 +62,24 @@ const HEADING_OPTIONS = [
   "Manual Entry",
 ];
 
+const SHOP_NAME_OPTIONS = [
+  "HOTEL",
+  "Jewellery shop",
+  "Kumkum sosayti",
+  "Phone docter",
+  "HOTEL comfort",
+  "First visit",
+  "Garment Shop",
+  "Gold shop",
+  "Home",
+  "JB wine shop",
+  "Medical shop",
+  "रेणुका ऑटो आळंदी फाटा",
+  "रेणुका ऑटो आंबेठाण",
+  "Airking",
+  "Manual Entry",
+];
+
 const VEHICLE_TYPE_OPTIONS = [
   "बाइक",
   "स्कूटी",
@@ -133,7 +151,10 @@ const DailySecurityReportBuilder = forwardRef<
 ) {
 
   const [shopName, setShopName] = useState("");
+  const [shopNameMode, setShopNameMode] = useState("");
+  const [customShopName, setCustomShopName] = useState("");
   const [reportDate, setReportDate] = useState("");
+
   const [period, setPeriod] = useState("");
   const [columnHeading, setColumnHeading] = useState("शाखा नं.");
   const [customHeading, setCustomHeading] = useState("");
@@ -159,6 +180,9 @@ const DailySecurityReportBuilder = forwardRef<
     useEffect(() => {
 
       if (!initialDraftData) {
+          setShopName("");
+          setShopNameMode("");
+          setCustomShopName("");
           setShowSecondTable(false);
           setVehicleRows([createEmptyVehicleRow()]);
           return;
@@ -167,7 +191,21 @@ const DailySecurityReportBuilder = forwardRef<
     try {
       const draft = JSON.parse(initialDraftData);
 
-      setShopName(draft.shopName ?? "");
+      const savedShopName = draft.shopName ?? "";
+
+      setShopName(savedShopName);
+
+      if (SHOP_NAME_OPTIONS.includes(savedShopName)) {
+        setShopNameMode(savedShopName);
+        setCustomShopName("");
+      } else if (savedShopName) {
+        setShopNameMode("Manual Entry");
+        setCustomShopName(savedShopName);
+      } else {
+        setShopNameMode("");
+        setCustomShopName("");
+      }
+
       setReportDate(draft.reportDate ?? "");
       setPeriod(draft.period ?? "");
       setColumnHeading(draft.columnHeading ?? "शाखा नं.");
@@ -569,7 +607,9 @@ tr {
   <h2 class="report-text">जय हिन्द</h2>
   <div class="date report-text">दिनांक: ${escapeHtml(formatReportDate(reportDate))}</div>
   <div class="shop report-text">${escapeHtml(shopName)}</div>
-  <div class="title report-text">दैनिक सुरक्षा रिपोर्ट${period ? " - " + escapeHtml(period) : ""}</div>
+  <div class="title report-text">
+  ${period ? escapeHtml(period) : ""}
+  </div>
 
   <table class="main-report-table">
   <thead>
@@ -610,66 +650,128 @@ ${
 </html>`;
   };
 
-
   const preview = () => {
   if (!validate()) return;
 
-  // If an earlier preview exists, preserve its formatting
-  // and update the report data from the form.
-  if (savedPreviewHtml) {
-    const savedDoc = new DOMParser().parseFromString(
-      savedPreviewHtml,
-      "text/html"
+  // First preview: show the newly generated report.
+  if (!savedPreviewHtml) {
+    setShowPreview(true);
+    return;
+  }
+
+  const savedDoc = new DOMParser().parseFromString(
+    savedPreviewHtml,
+    "text/html"
+  );
+
+  const freshDoc = new DOMParser().parseFromString(
+    buildHtml(),
+    "text/html"
+  );
+
+  // Update text without replacing the existing element.
+  // This preserves formatting already applied by the user.
+  const syncTextPreservingFormatting = (
+    target: Element | null,
+    source: Element | null
+  ) => {
+    if (!target || !source) return;
+
+    const sourceText = source.textContent || "";
+    const textNodes: Text[] = [];
+
+    const walker = target.ownerDocument?.createTreeWalker(
+      target,
+      NodeFilter.SHOW_TEXT
     );
 
-    const freshDoc = new DOMParser().parseFromString(
-      buildHtml(),
-      "text/html"
-    );
+    if (walker) {
+      let node: Node | null;
 
-    const savedMainTable = savedDoc.querySelector(
-      ".main-report-table"
-    );
-
-    const freshMainTable = freshDoc.querySelector(
-      ".main-report-table"
-    );
-
-    // Preserve the existing first-table formatting
-    // and add any newly added rows.
-    const savedBody = savedMainTable?.querySelector("tbody");
-    const freshBody = freshMainTable?.querySelector("tbody");
-
-    if (savedBody && freshBody) {
-      const savedRows = savedBody.querySelectorAll("tr");
-      const freshRows = freshBody.querySelectorAll("tr");
-
-      for (let i = savedRows.length; i < freshRows.length; i++) {
-        savedBody.appendChild(
-          freshRows[i].cloneNode(true)
-        );
+      while ((node = walker.nextNode())) {
+        textNodes.push(node as Text);
       }
     }
 
-    // Handle the optional second table.
-   
-    const savedSecondTable = savedDoc.querySelector(
-  ".secondary-table"
-);
+    if (textNodes.length > 0) {
+      textNodes[0].textContent = sourceText;
 
-const freshSecondTable = freshDoc.querySelector(
-  ".secondary-table"
-);
+      for (let i = 1; i < textNodes.length; i++) {
+        textNodes[i].textContent = "";
+      }
+    } else {
+      target.textContent = sourceText;
+    }
+  };
 
-if (freshSecondTable) {
-  // If the second table already exists in the preview,
-  // preserve the existing table and its formatting.
-  if (savedSecondTable) {
+  // -----------------------------------------
+  // 1. UPDATE TOP HEADER
+  // -----------------------------------------
+
+  syncTextPreservingFormatting(
+    savedDoc.querySelector("h2"),
+    freshDoc.querySelector("h2")
+  );
+
+  syncTextPreservingFormatting(
+    savedDoc.querySelector(".date"),
+    freshDoc.querySelector(".date")
+  );
+
+  syncTextPreservingFormatting(
+    savedDoc.querySelector(".shop"),
+    freshDoc.querySelector(".shop")
+  );
+
+  syncTextPreservingFormatting(
+    savedDoc.querySelector(".title"),
+    freshDoc.querySelector(".title")
+  );
+
+  // -----------------------------------------
+  // 2. UPDATE MAIN TABLE
+  // -----------------------------------------
+
+  const savedMainTable =
+    savedDoc.querySelector(".main-report-table");
+
+  const freshMainTable =
+    freshDoc.querySelector(".main-report-table");
+
+  if (savedMainTable && freshMainTable) {
+    // Update table headers.
+    const savedHead =
+      savedMainTable.querySelector("thead");
+
+    const freshHead =
+      freshMainTable.querySelector("thead");
+
+    const savedHeaderCells = savedHead
+      ? Array.from(savedHead.querySelectorAll("th"))
+      : [];
+
+    const freshHeaderCells = freshHead
+      ? Array.from(freshHead.querySelectorAll("th"))
+      : [];
+
+    const headerCount = Math.min(
+      savedHeaderCells.length,
+      freshHeaderCells.length
+    );
+
+    for (let i = 0; i < headerCount; i++) {
+      syncTextPreservingFormatting(
+        savedHeaderCells[i],
+        freshHeaderCells[i]
+      );
+    }
+
+    // Update main table rows.
     const savedBody =
-      savedSecondTable.querySelector("tbody");
+      savedMainTable.querySelector("tbody");
 
     const freshBody =
-      freshSecondTable.querySelector("tbody");
+      freshMainTable.querySelector("tbody");
 
     if (savedBody && freshBody) {
       const savedRows = Array.from(
@@ -680,13 +782,12 @@ if (freshSecondTable) {
         freshBody.querySelectorAll("tr")
       );
 
-      // Update existing rows while keeping the
-      // existing table structure/formatting.
       const commonRows = Math.min(
         savedRows.length,
         freshRows.length
       );
 
+      // Update existing rows.
       for (let i = 0; i < commonRows; i++) {
         const savedCells = Array.from(
           savedRows[i].querySelectorAll("td")
@@ -702,42 +803,14 @@ if (freshSecondTable) {
         );
 
         for (let j = 0; j < commonCells; j++) {
-          const freshText =
-            freshCells[j].textContent || "";
-
-          const textNodes: Text[] = [];
-
-          const walker =
-            savedDoc.createTreeWalker(
-              savedCells[j],
-              NodeFilter.SHOW_TEXT
-            );
-
-          let node: Node | null;
-
-          while ((node = walker.nextNode())) {
-            textNodes.push(node as Text);
-          }
-
-          if (textNodes.length > 0) {
-            textNodes[0].textContent =
-              freshText;
-
-            for (
-              let k = 1;
-              k < textNodes.length;
-              k++
-            ) {
-              textNodes[k].textContent = "";
-            }
-          } else {
-            savedCells[j].textContent =
-              freshText;
-          }
+          syncTextPreservingFormatting(
+            savedCells[j],
+            freshCells[j]
+          );
         }
       }
 
-      // Add newly created rows.
+      // Add new rows.
       for (
         let i = savedRows.length;
         i < freshRows.length;
@@ -748,7 +821,7 @@ if (freshSecondTable) {
         );
       }
 
-      // Remove rows deleted by the user.
+      // Remove deleted rows.
       while (
         savedBody.querySelectorAll("tr").length >
         freshRows.length
@@ -759,25 +832,131 @@ if (freshSecondTable) {
         rows[rows.length - 1].remove();
       }
     }
-  } else if (savedMainTable) {
-    // First time the second table is added.
-    savedMainTable.after(
-      freshSecondTable.cloneNode(true)
-    );
   }
-} else if (savedSecondTable) {
-  // User removed the second table.
-  savedSecondTable.remove();
-}
 
-    setSavedPreviewHtml(
-      savedDoc.documentElement.outerHTML
-    );
+  // -----------------------------------------
+  // 3. UPDATE OPTIONAL SECOND TABLE
+  // -----------------------------------------
+
+  const savedSecondTable =
+    savedDoc.querySelector(".secondary-table");
+
+  const freshSecondTable =
+    freshDoc.querySelector(".secondary-table");
+
+  if (freshSecondTable) {
+    if (savedSecondTable) {
+      // Update second table headers.
+      const savedHead =
+        savedSecondTable.querySelector("thead");
+
+      const freshHead =
+        freshSecondTable.querySelector("thead");
+
+      const savedHeaderCells = savedHead
+        ? Array.from(savedHead.querySelectorAll("th"))
+        : [];
+
+      const freshHeaderCells = freshHead
+        ? Array.from(freshHead.querySelectorAll("th"))
+        : [];
+
+      const headerCount = Math.min(
+        savedHeaderCells.length,
+        freshHeaderCells.length
+      );
+
+      for (let i = 0; i < headerCount; i++) {
+        syncTextPreservingFormatting(
+          savedHeaderCells[i],
+          freshHeaderCells[i]
+        );
+      }
+
+      // Update second table rows.
+      const savedBody =
+        savedSecondTable.querySelector("tbody");
+
+      const freshBody =
+        freshSecondTable.querySelector("tbody");
+
+      if (savedBody && freshBody) {
+        const savedRows = Array.from(
+          savedBody.querySelectorAll("tr")
+        );
+
+        const freshRows = Array.from(
+          freshBody.querySelectorAll("tr")
+        );
+
+        const commonRows = Math.min(
+          savedRows.length,
+          freshRows.length
+        );
+
+        // Update existing vehicle rows.
+        for (let i = 0; i < commonRows; i++) {
+          const savedCells = Array.from(
+            savedRows[i].querySelectorAll("td")
+          );
+
+          const freshCells = Array.from(
+            freshRows[i].querySelectorAll("td")
+          );
+
+          const commonCells = Math.min(
+            savedCells.length,
+            freshCells.length
+          );
+
+          for (let j = 0; j < commonCells; j++) {
+            syncTextPreservingFormatting(
+              savedCells[j],
+              freshCells[j]
+            );
+          }
+        }
+
+        // Add new vehicle rows.
+        for (
+          let i = savedRows.length;
+          i < freshRows.length;
+          i++
+        ) {
+          savedBody.appendChild(
+            freshRows[i].cloneNode(true)
+          );
+        }
+
+        // Remove deleted vehicle rows.
+        while (
+          savedBody.querySelectorAll("tr").length >
+          freshRows.length
+        ) {
+          const rows =
+            savedBody.querySelectorAll("tr");
+
+          rows[rows.length - 1].remove();
+        }
+      }
+    } else if (savedMainTable) {
+      // First time second table is added.
+      savedMainTable.after(
+        freshSecondTable.cloneNode(true)
+      );
+    }
+  } else if (savedSecondTable) {
+    // Second table was removed.
+    savedSecondTable.remove();
   }
+
+  setSavedPreviewHtml(
+    savedDoc.documentElement.outerHTML
+  );
 
   setShowPreview(true);
 };
-
+  
  
   const rememberSelection = () => {
     const doc = iframeRef.current?.contentDocument;
@@ -1665,24 +1844,61 @@ const attachPdf = async () => {
         Create Daily Security Report
       </h3>
 
-      <p className="mt-1 text-sm text-slate-600">
-        Create a separate report in Hindi, English, or both.
-      </p>
-
       {!showPreview ? (
         <>
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">
-                Shop Name
-              </label>
-              <input
-                value={shopName}
-                onChange={(e) => setShopName(e.target.value)}
-                placeholder="Enter shop name"
-                className={inputClass}
-              />
+
+            <div className="mb-5 text-center">
+              <h4 className="text-lg font-bold text-indigo-700">
+                Report Header
+              </h4>
             </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+            <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">
+                  Shop Name
+                </label>
+
+                <select
+                  value={shopNameMode}
+                  onChange={(e) => {
+                    const value = e.target.value;
+
+                    if (value === "Manual Entry") {
+                      setShopNameMode("Manual Entry");
+                      setShopName("");
+                      setCustomShopName("");
+                    } else {
+                      setShopNameMode(value);
+                      setShopName(value);
+                      setCustomShopName("");
+                    }
+                  }}
+                  className={inputClass}
+                >
+                  <option value="">Select shop name</option>
+
+                  {SHOP_NAME_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+
+                {shopNameMode === "Manual Entry" && (
+                  <input
+                    value={customShopName}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setCustomShopName(value);
+                      setShopName(value);
+                    }}
+                    placeholder="Enter shop name"
+                    className={`${inputClass} mt-2`}
+                  />
+                )}
+              </div>
 
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">
@@ -1707,6 +1923,12 @@ const attachPdf = async () => {
                 className={inputClass}
               />
             </div>
+          </div>
+
+          <div className="mb-5 mt-6 text-center">
+            <h4 className="text-lg font-bold text-indigo-700">
+              Report Details
+            </h4>
           </div>
 
           <div className="mt-5">
@@ -1890,6 +2112,11 @@ const attachPdf = async () => {
           </div>
 
           <div className="mt-5 rounded-lg border border-slate-200 bg-white p-3">
+              <div className="mb-3 flex items-center justify-between">
+                <h4 className="text-lg font-bold text-emerald-700">
+                  Vehicle Movement Details
+                </h4>
+
                 {!showSecondTable ? (
                   <button
                     type="button"
@@ -1899,161 +2126,158 @@ const attachPdf = async () => {
                     + Add Second Table
                   </button>
                 ) : (
-                  <>
-                    <div className="mb-3 flex items-center justify-between">
-                      <span className="text-sm font-semibold text-slate-700">
-                        Vehicle Movement
-                      </span>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowSecondTable(false);
-                          setVehicleRows([createEmptyVehicleRow()]);
-                        }}
-                        className="text-sm font-medium text-red-600"
-                      >
-                        Remove Second Table
-                      </button>
-                    </div>
-
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse">
-                        <thead>
-                          <tr>
-                            <th className="border border-slate-300 px-3 py-2 text-left text-sm">
-                              वाहन प्रकार
-                            </th>
-                            <th className="border border-slate-300 px-3 py-2 text-center text-sm">
-                              अंदर आए
-                            </th>
-                            <th className="border border-slate-300 px-3 py-2 text-center text-sm">
-                              बाहर गए
-                            </th>
-                            <th className="border border-slate-300 px-3 py-2 text-center text-sm">
-                              Action
-                            </th>
-                          </tr>
-                        </thead>
-
-                        <tbody>
-                          {vehicleRows.map((row, index) => (
-                            <tr key={index}>
-                              <td className="border border-slate-300 p-2">
-                                <select
-                                  value={row.vehicleType}
-                                  onChange={(e) => {
-                                    const value = e.target.value;
-
-                                    updateVehicleRow(
-                                      index,
-                                      "vehicleType",
-                                      value
-                                    );
-
-                                    if (value !== "Manual Entry") {
-                                      updateVehicleRow(
-                                        index,
-                                        "customVehicleType",
-                                        ""
-                                      );
-                                    }
-                                  }}
-                                  className={inputClass}
-                                >
-                                  <option value="">
-                                    Select vehicle type
-                                  </option>
-
-                                  {VEHICLE_TYPE_OPTIONS.map((option) => (
-                                    <option
-                                      key={option}
-                                      value={option}
-                                    >
-                                      {option}
-                                    </option>
-                                  ))}
-                                </select>
-
-                                {row.vehicleType === "Manual Entry" && (
-                                  <input
-                                    value={row.customVehicleType}
-                                    onChange={(e) =>
-                                      updateVehicleRow(
-                                        index,
-                                        "customVehicleType",
-                                        e.target.value
-                                      )
-                                    }
-                                    placeholder="Enter vehicle type"
-                                    className={`${inputClass} mt-2`}
-                                  />
-                                )}
-                              </td>
-
-                              <td className="border border-slate-300 p-2">
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={row.inside}
-                                  onChange={(e) =>
-                                    updateVehicleRow(
-                                      index,
-                                      "inside",
-                                      e.target.value
-                                    )
-                                  }
-                                  placeholder="0"
-                                  className={`${inputClass} text-center`}
-                                />
-                              </td>
-
-                              <td className="border border-slate-300 p-2">
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={row.outside}
-                                  onChange={(e) =>
-                                    updateVehicleRow(
-                                      index,
-                                      "outside",
-                                      e.target.value
-                                    )
-                                  }
-                                  placeholder="0"
-                                  className={`${inputClass} text-center`}
-                                />
-                              </td>
-
-                              <td className="border border-slate-300 p-2 text-center">
-                                {vehicleRows.length > 1 && (
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      removeVehicleRow(index)
-                                    }
-                                    className="text-sm font-medium text-red-600"
-                                  >
-                                    Remove
-                                  </button>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={addVehicleRow}
-                      className="mt-3 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                    >
-                      + Add Vehicle Row
-                    </button>
-                  </>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowSecondTable(false);
+                      setVehicleRows([createEmptyVehicleRow()]);
+                    }}
+                    className="text-sm font-medium text-red-600"
+                  >
+                    Remove Second Table
+                  </button>
                 )}
               </div>
+
+              {showSecondTable && (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr>
+                          <th className="border border-slate-300 px-3 py-2 text-left text-sm">
+                            वाहन प्रकार
+                          </th>
+
+                          <th className="border border-slate-300 px-3 py-2 text-center text-sm">
+                            अंदर आए
+                          </th>
+
+                          <th className="border border-slate-300 px-3 py-2 text-center text-sm">
+                            बाहर गए
+                          </th>
+
+                          <th className="border border-slate-300 px-3 py-2 text-center text-sm">
+                            Action
+                          </th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {vehicleRows.map((row, index) => (
+                          <tr key={index}>
+                            <td className="border border-slate-300 p-2">
+                              <select
+                                value={row.vehicleType}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+
+                                  updateVehicleRow(
+                                    index,
+                                    "vehicleType",
+                                    value
+                                  );
+
+                                  if (value !== "Manual Entry") {
+                                    updateVehicleRow(
+                                      index,
+                                      "customVehicleType",
+                                      ""
+                                    );
+                                  }
+                                }}
+                                className={inputClass}
+                              >
+                                <option value="">
+                                  Select vehicle type
+                                </option>
+
+                                {VEHICLE_TYPE_OPTIONS.map((option) => (
+                                  <option key={option} value={option}>
+                                    {option}
+                                  </option>
+                                ))}
+                              </select>
+
+                              {row.vehicleType === "Manual Entry" && (
+                                <input
+                                  value={row.customVehicleType}
+                                  onChange={(e) =>
+                                    updateVehicleRow(
+                                      index,
+                                      "customVehicleType",
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder="Enter vehicle type"
+                                  className={`${inputClass} mt-2`}
+                                />
+                              )}
+                            </td>
+
+                            <td className="border border-slate-300 p-2">
+                              <input
+                                type="number"
+                                min="0"
+                                value={row.inside}
+                                onChange={(e) =>
+                                  updateVehicleRow(
+                                    index,
+                                    "inside",
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="0"
+                                className={`${inputClass} text-center`}
+                              />
+                            </td>
+
+                            <td className="border border-slate-300 p-2">
+                              <input
+                                type="number"
+                                min="0"
+                                value={row.outside}
+                                onChange={(e) =>
+                                  updateVehicleRow(
+                                    index,
+                                    "outside",
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="0"
+                                className={`${inputClass} text-center`}
+                              />
+                            </td>
+
+                            <td className="border border-slate-300 p-2 text-center">
+                              {vehicleRows.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    removeVehicleRow(index)
+                                  }
+                                  className="text-sm font-medium text-red-600"
+                                >
+                                  Remove
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={addVehicleRow}
+                    className="mt-3 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                  >
+                    + Add Vehicle Row
+                  </button>
+                </>
+              )}
+            </div>
 
 
           <div className="mt-5 flex flex-wrap gap-3">
