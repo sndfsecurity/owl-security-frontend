@@ -6,7 +6,12 @@ import { getClientByUserId } from "@/services/clientService";
 import { getSubmittedReportsByClientId } from "@/services/reportService";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { enablePushNotifications } from "@/services/notificationService";
+
+import {
+  enablePushNotifications,
+  savePushSubscription,
+  syncPushSubscription,
+} from "@/services/notificationService";
 
 
 export default function ClientDashboardPage() {
@@ -48,6 +53,73 @@ export default function ClientDashboardPage() {
     loadData();
   }, []);
 
+  // notification useEffect 
+
+
+  useEffect(() => {
+  let syncing = false;
+
+  const syncNotifications = async () => {
+    if (syncing) {
+      return;
+    }
+
+    syncing = true;
+
+    try {
+      await syncPushSubscription();
+    } catch (error) {
+      console.error(
+        "Push subscription sync failed:",
+        error
+      );
+    } finally {
+      syncing = false;
+    }
+  };
+
+  // Client panel open hone par check
+  syncNotifications();
+
+  // Browser/PWA par wapas aane par check
+  const handleVisibilityChange = () => {
+    if (
+      document.visibilityState === "visible"
+    ) {
+      syncNotifications();
+    }
+  };
+
+  const handleFocus = () => {
+    syncNotifications();
+  };
+
+  document.addEventListener(
+    "visibilitychange",
+    handleVisibilityChange
+  );
+
+  window.addEventListener(
+    "focus",
+    handleFocus
+  );
+
+  return () => {
+    document.removeEventListener(
+      "visibilitychange",
+      handleVisibilityChange
+    );
+
+    window.removeEventListener(
+      "focus",
+      handleFocus
+    );
+  };
+}, []);
+
+
+  ///////////////////////////////////////////////////////////////
+
   
   const reportList = Array.isArray(reports)
   ? reports
@@ -68,31 +140,6 @@ const incidentReports = reportList.filter(
 ).length;
 
 
-const handleEnableNotifications = async () => {
-  try {
-    const subscription =
-      await enablePushNotifications();
-
-    console.log(
-      "Push subscription created:",
-      subscription.toJSON()
-    );
-
-    alert("Notifications enabled successfully.");
-  } catch (error) {
-    console.error(
-      "Notification setup failed:",
-      error
-    );
-
-    alert(
-      error instanceof Error
-        ? error.message
-        : "Failed to enable notifications."
-    );
-  }
-};
-
   return (
     <ClientLayout>
 
@@ -100,14 +147,6 @@ const handleEnableNotifications = async () => {
       <h1 className="text-3xl font-bold text-slate-800 mb-6">
         Client Dashboard
       </h1>
-
-      <button
-        type="button"
-        onClick={handleEnableNotifications}
-        className="rounded-lg bg-blue-600 px-4 py-2 text-white"
-      >
-        Enable Notifications
-      </button>
 
       {/* Welcome Card */}
       <div className="bg-white p-6 rounded-xl shadow mb-6 border-l-4 border-blue-600">

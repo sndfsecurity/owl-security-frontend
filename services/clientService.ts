@@ -110,7 +110,6 @@ export async function getClientById(
   return response.json();
 }
 
-
 export async function getClientByUserId(
   userId: number
 ) {
@@ -127,10 +126,31 @@ export async function getClientByUserId(
   );
 
   if (!response.ok) {
-    throw new Error("Failed to fetch client");
+    if (response.status === 404) {
+      return null;
+    }
+
+    throw new Error(
+      "Failed to fetch client"
+    );
   }
 
-  return response.json();
+  const text = await response.text();
+
+  if (!text.trim()) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    console.error(
+      "Invalid client response:",
+      error
+    );
+
+    return null;
+  }
 }
 
 

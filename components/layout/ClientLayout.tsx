@@ -11,6 +11,8 @@ import {
   FiX,
 } from "react-icons/fi";
 
+import NotificationPermissionPrompt from "@/components/NotificationPermissionPrompt";
+
 export default function ClientLayout({
   children,
 }: {
@@ -47,6 +49,13 @@ export default function ClientLayout({
   useEffect(() => {
   const checkSession = () => {
     const token = localStorage.getItem("token");
+
+    const role = localStorage.getItem("role");
+
+    if (role !== "CLIENT") {
+      window.location.replace("/login");
+      return;
+    }
 
     if (!token) {
       window.location.replace("/login");
@@ -106,7 +115,10 @@ export default function ClientLayout({
   ];
 
   return (
+    
     <div className="min-h-screen bg-slate-50">
+
+      <NotificationPermissionPrompt />
 
       {/* HEADER */}
       <header className="sticky top-0 z-[100] bg-gradient-to-r from-slate-50 via-white to-slate-50 border-b border-slate-200/80 shadow-sm backdrop-blur-md bg-white/95">
