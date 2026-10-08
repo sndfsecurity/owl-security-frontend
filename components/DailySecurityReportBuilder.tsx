@@ -332,8 +332,18 @@ const removeVehicleRow = (index: number) => {
   );
 };
 
-  const addIncident = () =>
-    setIncidents((prev) => [...prev, createEmptyIncident()]);
+const addIncident = () =>
+  setIncidents((prev) => {
+    const firstRowBranch = prev[0]?.branch ?? "";
+
+    return [
+      ...prev,
+      {
+        ...createEmptyIncident(),
+        branch: firstRowBranch,
+      },
+    ];
+  });
 
   const removeIncident = (index: number) =>
     setIncidents((prev) => prev.filter((_, i) => i !== index));

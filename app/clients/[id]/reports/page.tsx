@@ -729,50 +729,15 @@ const handleSubmit = async () => {
                 </h2>
                 <p className="text-blue-100 text-sm">Fill in the report details below</p>
               </div>
+
               <div className="p-4 sm:p-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                  <div>
+
+                <div className="mb-5">
                     <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider block mb-1.5">
-                      Report Status
+                      Report Notes
                     </label>
-                    <select
-                      value={reportData.status}
-                      onChange={(e) =>
-                        setReportData({ ...reportData, status: e.target.value })
-                      }
-                      className="w-full border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                    >
-                      <option value="NORMAL">NORMAL</option>
-                      <option value="OBSERVATION">OBSERVATION</option>
-                      <option value="INCIDENT">INCIDENT</option>
-                    </select>
-                  </div>
 
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider block mb-1.5">
-                      Priority
-                    </label>
-                    <select
-                      value={reportData.priority}
-                      onChange={(e) =>
-                        setReportData({ ...reportData, priority: e.target.value })
-                      }
-                      className="w-full border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                    >
-                      <option value="LOW">LOW</option>
-                      <option value="MEDIUM">MEDIUM</option>
-                      <option value="HIGH">HIGH</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="mt-4">
-
-                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider block mb-1.5">
-                    Report Notes
-                  </label>
-
-                  <NotesEditor
+                    <NotesEditor
                       value={reportData.notes}
                       onChange={(value) =>
                         setReportData((prev) => ({
@@ -781,6 +746,59 @@ const handleSubmit = async () => {
                         }))
                       }
                     />
+                  </div>
+
+                  {/* Report Status + Priority - BELOW NOTES */}
+                  <div className="flex flex-col sm:flex-row gap-4 sm:gap-5">
+
+                    {/* Report Status */}
+                    <div className="w-full sm:w-64">
+                      <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider block mb-1.5">
+                        Report Status
+                      </label>
+
+                      <select
+                        value={reportData.status}
+                        onChange={(e) =>
+                          setReportData({
+                            ...reportData,
+                            status: e.target.value,
+                          })
+                        }
+                        className="w-full border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                      >
+                        <option value="NORMAL">NORMAL</option>
+                        <option value="OBSERVATION">OBSERVATION</option>
+                        <option value="INCIDENT">INCIDENT</option>
+                      </select>
+                    </div>
+
+                    {/* Priority */}
+                    <div className="w-full sm:w-64">
+                      <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider block mb-1.5">
+                        Priority
+                      </label>
+
+                      <select
+                        value={reportData.priority}
+                        onChange={(e) =>
+                          setReportData({
+                            ...reportData,
+                            priority: e.target.value,
+                          })
+                        }
+                        className="w-full border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                      >
+                        <option value="LOW">LOW</option>
+                        <option value="MEDIUM">MEDIUM</option>
+                        <option value="HIGH">HIGH</option>
+                      </select>
+                    </div>
+
+                  </div>
+
+                
+                <div className="mt-4">
 
                     <div className="mt-3">
                       <p className="text-xs text-slate-500 mb-2">
@@ -865,6 +883,7 @@ const handleSubmit = async () => {
                             Choose another PDF
                           </button>
                         </div>
+                        
                       )}
                     </div>
 
