@@ -33,6 +33,8 @@ import { FiDownload } from "react-icons/fi";
 
   const [reports, setReports] = useState<any[]>([]);
 
+  const [isFilterMode, setIsFilterMode] = useState(false);
+
   const [page, setPage] = useState(0);
 
   const [totalPages, setTotalPages] = useState(0);
@@ -86,16 +88,23 @@ const statusFilter =
 
         setClient(clientData);
 
-        const reportData =
-            await getSubmittedReportsByClientId(
+      const reportData = isFilterMode
+      
+          ? await getSubmittedReportsByDateRange(
+              fromDate,
+              toDate,
+              clientData.id,
+              page,
+              5
+            )
+          : await getSubmittedReportsByClientId(
               clientData.id,
               page,
               5
             );
 
-          setReports(reportData.content || []);
-
-          setTotalPages(reportData.totalPages || 0);
+        setReports(reportData.content || []);
+        setTotalPages(reportData.totalPages || 0);
 
 
       } catch (error) {

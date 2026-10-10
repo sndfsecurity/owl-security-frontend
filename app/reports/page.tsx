@@ -24,7 +24,7 @@ export default function ReportsPage() {
   const [reports, setReports] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
+  
   const [selectedViewImages, setSelectedViewImages] = useState<string[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -43,14 +43,19 @@ export default function ReportsPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [isFilterMode, setIsFilterMode] = useState(false);
 
-  const loadReports = async (currentPage = page) => {
+    const loadReports = async (currentPage = page) => {
     try {
       setLoading(true);
 
-      const reportsData = await getSubmittedReports(
-        currentPage,
-        8
-      );
+      const reportsData = isFilterMode
+        ? await getSubmittedReportsByDateRange(
+            fromDate,
+            toDate,
+            selectedClient ? Number(selectedClient) : undefined,
+            currentPage,
+            8
+          )
+        : await getSubmittedReports(currentPage, 8);
 
       const clientsData = await getClients();
 
@@ -65,8 +70,8 @@ export default function ReportsPage() {
   };
 
   useEffect(() => {
-    loadReports(page);
-  }, [page]);
+  loadReports(page);
+}, [page]);
 
   const getPlainText = (html: string) =>
   html.replace(/<[^>]*>/g, "").trim();
@@ -91,7 +96,7 @@ export default function ReportsPage() {
           ? Number(selectedClient)
           : undefined,
         0,
-        10
+        8
       );
 
       setIsFilterMode(true);
