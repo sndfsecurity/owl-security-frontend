@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { getDashboardData } from "@/services/dashboardService";
-import { getReports } from "@/services/reportService";
+import { getRecentReports } from "@/services/reportService";
 import { getClients } from "@/services/clientService";
 
 export default function DashboardPage() {
@@ -29,12 +29,13 @@ export default function DashboardPage() {
         const data = await getDashboardData();
         setStats(data);
 
-        const reportData = await getReports(0, 5);
+        const reportData = await getRecentReports();
         const clientsData = await getClients();
 
-        setRecentReports(reportData.content || []);
+        setRecentReports(Array.isArray(reportData) ? reportData : []);
         setClients(clientsData);
         setRecentClients(clientsData.slice(0, 5));
+
       } catch (error) {
         console.error(error);
       }
