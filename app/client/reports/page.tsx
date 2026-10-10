@@ -5,6 +5,12 @@ import dynamic from "next/dynamic";
 
 import NotesViewer from "@/components/NotesViewer";
 
+import {
+  getReportMessages,
+  sendReportMessage,
+  type ReportMessage,
+} from "@/services/reportMessageService";
+
 const PdfViewer = dynamic(
   () => import("@/components/PdfViewer"),
   { ssr: false }
@@ -56,6 +62,24 @@ const [selectedNote, setSelectedNote] =
 useState<string | null>(null);
 
 const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
+
+
+const [conversationReport, setConversationReport] =
+  useState<any>(null);
+
+const [messages, setMessages] =
+  useState<ReportMessage[]>([]);
+
+const [newMessage, setNewMessage] = useState("");
+
+const [messagesLoading, setMessagesLoading] =
+  useState(false);
+
+const [messageSending, setMessageSending] =
+  useState(false);
+
+const [messageError, setMessageError] = useState("");
+
 
 const searchParams = useSearchParams();
 
@@ -203,6 +227,61 @@ if (selectedImages.length === 0) return;
   }
 
 };
+
+
+const handleOpenConversation = async (report: any) => {
+  setConversationReport(report);
+  setMessages([]);
+  setNewMessage("");
+  setMessageError("");
+  setMessagesLoading(true);
+
+  try {
+    const data = await getReportMessages(report.id);
+    setMessages(data);
+  } catch (error) {
+    console.error("Failed to load report messages:", error);
+    setMessageError("Unable to load messages. Please try again.");
+  } finally {
+    setMessagesLoading(false);
+  }
+};
+
+const handleSendMessage = async () => {
+  const message = newMessage.trim();
+
+  if (!message || !conversationReport || messageSending) {
+    return;
+  }
+
+  if (message.length > 5000) {
+    setMessageError("Message cannot exceed 5000 characters.");
+    return;
+  }
+
+  setMessageSending(true);
+  setMessageError("");
+
+  try {
+    const savedMessage = await sendReportMessage(
+      conversationReport.id,
+      message
+    );
+
+    setMessages((previous) => [...previous, savedMessage]);
+    setNewMessage("");
+  } catch (error) {
+    console.error("Failed to send message:", error);
+    setMessageError(
+      error instanceof Error
+        ? error.message
+        : "Unable to send message. Please try again."
+    );
+  } finally {
+    setMessageSending(false);
+  }
+};
+
 
   return (
 
@@ -388,6 +467,10 @@ if (selectedImages.length === 0) return;
           Attachment
         </th>
 
+        <th className="p-3 text-left">
+          Reply
+        </th>
+
       </tr>
 
     </thead>
@@ -503,6 +586,17 @@ if (selectedImages.length === 0) return;
             </span>
         )}
   </div>
+</td>
+
+
+<td className="p-3">
+  <button
+    type="button"
+    onClick={() => handleOpenConversation(report)}
+    className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+  >
+    Reply
+  </button>
 </td>
 
 </tr>
@@ -681,6 +775,23 @@ if (selectedImages.length === 0) return;
                 No Attachment
               </div>
           )}
+
+          {!report.imageUrls?.length &&
+            !report.videoUrls?.length &&
+            !report.videoUrl && (
+              <div className="w-full bg-gray-100 text-center py-2 rounded-xl text-gray-500">
+                No Attachment
+              </div>
+            )}
+
+            {/* Messages Button */}
+            <button
+              type="button"
+              onClick={() => handleOpenConversation(report)}
+              className="w-full mt-2 rounded-xl bg-blue-600 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 active:scale-95"
+            >
+              Reply
+            </button>
 
 
       </div>
@@ -948,6 +1059,122 @@ if (selectedImages.length === 0) return;
     onClose={() => setSelectedPdf(null)}
   />
 )}
+
+
+
+{conversationReport && (
+  <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 p-3 sm:p-5">
+    <div className="flex max-h-[85dvh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+      <div className="flex items-center justify-between border-b p-4">
+        <div>
+          <h2 className="text-lg font-bold text-slate-800">
+            Report Conversation
+          </h2>
+          <p className="text-sm text-slate-500">
+            Report #{conversationReport.id} · {conversationReport.reportDate}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setConversationReport(null);
+            setMessages([]);
+            setNewMessage("");
+            setMessageError("");
+          }}
+          className="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700"
+        >
+          Close
+        </button>
+      </div>
+
+      <div className="min-h-[200px] flex-1 space-y-3 overflow-y-auto bg-slate-50 p-4">
+        {messagesLoading ? (
+          <p className="text-center text-slate-500">
+            Loading messages...
+          </p>
+        ) : messages.length === 0 ? (
+          <p className="text-center text-slate-500">
+            No messages yet. Send the first message to start the conversation.
+          </p>
+        ) : (
+          messages.map((item) => {
+            const isClient = item.senderRole === "CLIENT";
+
+            return (
+              <div
+                key={item.id}
+                className={`flex ${
+                  isClient ? "justify-start" : "justify-end"
+                }`}
+              >
+                <div
+                  className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                    isClient
+                      ? "bg-white text-slate-800 border border-slate-200"
+                      : "bg-indigo-600 text-white"
+                  }`}
+                >
+                  <p className="mb-1 text-xs font-bold opacity-75">
+                    {isClient ? "Client" : "Admin"}
+                  </p>
+
+                  <p className="whitespace-pre-wrap break-words text-sm">
+                    {item.message}
+                  </p>
+
+                  <p className="mt-2 text-right text-[10px] opacity-70">
+                    {item.createdAt
+                      ? new Date(item.createdAt).toLocaleString()
+                      : ""}
+                  </p>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <div className="border-t bg-white p-4">
+        {messageError && (
+          <p className="mb-2 text-sm text-red-600">
+            {messageError}
+          </p>
+        )}
+
+        <textarea
+          value={newMessage}
+          onChange={(event) => setNewMessage(event.target.value)}
+          maxLength={5000}
+          rows={3}
+          placeholder="Type your message..."
+          className="w-full resize-y rounded-xl border border-slate-300 p-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+        />
+
+        <div className="mt-2 flex items-center justify-between gap-3">
+          <span className="text-xs text-slate-500">
+            {newMessage.length}/5000
+          </span>
+
+          <button
+            type="button"
+            onClick={handleSendMessage}
+            disabled={
+              messagesLoading ||
+              messageSending ||
+              !newMessage.trim()
+            }
+            className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {messageSending ? "Sending..." : "Send Message"}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
 
 
 </ClientLayout>

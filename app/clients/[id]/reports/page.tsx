@@ -30,6 +30,12 @@ import {
   getSubmittedReportsByClientId,
 } from "@/services/reportService";
 
+import {
+  getReportMessages,
+  sendReportMessage,
+  type ReportMessage,
+} from "@/services/reportMessageService";
+
 import dynamic from "next/dynamic";
 
 const PdfViewer = dynamic(
@@ -99,6 +105,14 @@ const [draftPdfUrl, setDraftPdfUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [removeAudio, setRemoveAudio] = useState(false);
+
+// Report Conversation States
+const [conversationReport, setConversationReport] = useState<any | null>(null);
+const [messages, setMessages] = useState<ReportMessage[]>([]);
+const [newMessage, setNewMessage] = useState("");
+const [messagesLoading, setMessagesLoading] = useState(false);
+const [messageSending, setMessageSending] = useState(false);
+const [messageError, setMessageError] = useState("");
 
 
   const [reportData, setReportData] = useState({
@@ -579,6 +593,61 @@ const handleSubmit = async () => {
   });
 
   setShowForm(true);
+};
+
+
+// Open report conversation
+const handleOpenConversation = async (report: any) => {
+  setConversationReport(report);
+  setMessages([]);
+  setNewMessage("");
+  setMessageError("");
+  setMessagesLoading(true);
+
+  try {
+    const data = await getReportMessages(report.id);
+    setMessages(data);
+  } catch (error) {
+    console.error("Failed to load report messages:", error);
+    setMessageError("Unable to load messages. Please try again.");
+  } finally {
+    setMessagesLoading(false);
+  }
+};
+
+// Send Admin reply
+const handleSendMessage = async () => {
+  if (!conversationReport || !newMessage.trim() || messageSending) {
+    return;
+  }
+
+  // Backend requires a Client message before an Admin can reply.
+  const clientHasMessaged = messages.some(
+    (message) => message.senderRole === "CLIENT"
+  );
+
+  if (!clientHasMessaged) {
+    setMessageError("The client must send the first message.");
+    return;
+  }
+
+  setMessageSending(true);
+  setMessageError("");
+
+  try {
+    const savedMessage = await sendReportMessage(
+      conversationReport.id,
+      newMessage.trim()
+    );
+
+    setMessages((previous) => [...previous, savedMessage]);
+    setNewMessage("");
+  } catch (error) {
+    console.error("Failed to send Admin reply:", error);
+    setMessageError("Unable to send reply. Please try again.");
+  } finally {
+    setMessageSending(false);
+  }
 };
   
 
@@ -1466,14 +1535,27 @@ const handleSubmit = async () => {
                       </td>
 
 
-                    <td className="p-4">
+                  <td className="p-4">
+                    <div className="flex flex-wrap gap-2">
                       <button
+                        type="button"
+                        onClick={() => handleOpenConversation(report)}
+                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-all duration-200 active:scale-95"
+                      >
+                        Reply
+                      </button>
+
+                      <button
+                        type="button"
                         onClick={() => handleDeleteReport(report.id)}
                         className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-lg transition-all duration-200 hover:shadow-md active:scale-95"
                       >
                         Delete
                       </button>
-                    </td>
+                    </div>
+                  </td>
+
+
                   </tr>
                 ))}
               </tbody>
@@ -1594,12 +1676,23 @@ const handleSubmit = async () => {
                     );
                   })()}
 
-                  <button
-                    onClick={() => handleDeleteReport(report.id)}
-                    className="flex-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-lg transition-all active:scale-95"
-                  >
-                    Delete
-                  </button>
+                 <button
+                      type="button"
+                      onClick={() => handleOpenConversation(report)}
+                      className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-all active:scale-95"
+                    >
+                      Reply
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteReport(report.id)}
+                      className="flex-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-lg transition-all active:scale-95"
+                    >
+                      Delete
+                    </button>
+
+
                 </div>
               </div>
             </div>
@@ -1866,7 +1959,148 @@ const handleSubmit = async () => {
               </div>
             </div>
           )}
+
+
+          {/* Report Conversation Modal */}
+{conversationReport && (
+  <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-5">
+    <div className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+
+      {/* Header */}
+      <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-slate-50 p-4">
+        <div>
+          <h2 className="text-lg font-bold text-slate-800">
+            Report Conversation
+          </h2>
+          <p className="text-sm text-slate-500">
+            Report #{conversationReport.id}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setConversationReport(null);
+            setMessages([]);
+            setNewMessage("");
+            setMessageError("");
+          }}
+          className="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-600"
+        >
+          Close
+        </button>
       </div>
+
+      {/* Messages */}
+      <div className="min-h-[200px] flex-1 space-y-4 overflow-y-auto bg-slate-50 p-4">
+
+        {messagesLoading ? (
+          <p className="py-10 text-center text-sm text-slate-500">
+            Loading messages...
+          </p>
+        ) : messages.length === 0 ? (
+          <p className="py-10 text-center text-sm text-slate-500">
+            No messages yet. The client must send the first message.
+          </p>
+        ) : (
+          messages.map((message) => {
+            const isAdmin = message.senderRole === "ADMIN";
+
+            return (
+              <div
+                key={message.id}
+                className={`flex ${isAdmin ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-sm ${
+                    isAdmin
+                      ? "rounded-br-sm bg-blue-600 text-white"
+                      : "rounded-bl-sm border border-slate-200 bg-white text-slate-800"
+                  }`}
+                >
+                  <p
+                    className={`mb-1 text-xs font-bold ${
+                      isAdmin ? "text-blue-100" : "text-slate-500"
+                    }`}
+                  >
+                    {isAdmin ? "Admin" : "Client"}
+                  </p>
+
+                  <p className="whitespace-pre-wrap break-words text-sm">
+                    {message.message}
+                  </p>
+
+                  <p
+                    className={`mt-2 text-right text-[10px] ${
+                      isAdmin ? "text-blue-100" : "text-slate-400"
+                    }`}
+                  >
+                    {new Date(message.createdAt).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            );
+          })
+        )}
+
+      </div>
+
+      {/* Reply Box */}
+      <div className="shrink-0 border-t border-slate-200 bg-white p-4">
+
+        {messageError && (
+          <p className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+            {messageError}
+          </p>
+        )}
+
+        
+        <textarea
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          placeholder="Type your reply to the client..."
+          rows={3}
+          maxLength={5000}
+          disabled={
+            messagesLoading ||
+            messageSending ||
+            !messages.some((message) => message.senderRole === "CLIENT")
+          }
+          className="w-full resize-y rounded-xl border border-slate-300 p-3 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+        />
+
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <p className="text-xs text-slate-400">
+            {newMessage.length}/5000 characters
+          </p>
+
+          <button
+            type="button"
+            onClick={handleSendMessage}
+            disabled={
+              messagesLoading ||
+              messageSending ||
+              !newMessage.trim() ||
+              !messages.some((message) => message.senderRole === "CLIENT")
+            }
+            className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {messageSending ? "Sending..." : "Send Reply"}
+          </button>
+        </div>
+
+        {!messagesLoading &&
+          !messages.some((message) => message.senderRole === "CLIENT") && (
+            <p className="mt-2 text-xs text-amber-600">
+              You can reply after the client sends the first message.
+            </p>
+          )}
+      </div>
+    </div>
+  </div>
+)}
+
+ </div>
 
       <style jsx>{`
         @keyframes slideDown {

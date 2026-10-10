@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
 
+import NotificationPermissionPrompt from "@/components/NotificationPermissionPrompt";
+
 export default function DashboardLayout({
 
   children,
@@ -52,24 +54,29 @@ export default function DashboardLayout({
   return () => clearInterval(interval);
 }, []);
 
-  return (
-    <div className="min-h-screen bg-slate-100">
-      <Header
-        onMenuClick={() =>
-          setSidebarOpen(true)
-        }
-      />
 
-      <Sidebar
-        isOpen={sidebarOpen}
-        onClose={() =>
-          setSidebarOpen(false)
-        }
-      />
+return (
+  <div className="min-h-screen bg-slate-100">
+    <NotificationPermissionPrompt />
 
-      <main className="p-4 lg:ml-64">
-        {children}
-      </main>
-    </div>
-  );
+    <Header
+      onMenuClick={() =>
+        setSidebarOpen(true)
+      }
+    />
+
+    <Sidebar
+      isOpen={sidebarOpen}
+      onClose={() =>
+        setSidebarOpen(false)
+      }
+    />
+
+    <main className="p-4 lg:ml-64">
+      {children}
+    </main>
+  </div>
+);
+
+  
 } 

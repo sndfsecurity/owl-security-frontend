@@ -14,10 +14,11 @@ export default function NotificationPermissionPrompt() {
 
   useEffect(() => {
     const syncOrShowPrompt = async () => {
-      // Only clients should use notifications
+
+     // Only Admin and Client users should use notifications
       const role = localStorage.getItem("role");
 
-      if (role !== "CLIENT") {
+      if (role !== "CLIENT" && role !== "ADMIN") {
         return;
       }
 
@@ -180,12 +181,14 @@ export default function NotificationPermissionPrompt() {
           <div className="min-w-0 flex-1">
             <h3 className="text-base font-bold text-slate-800 sm:text-lg">
               Stay Updated
-            </h3>
+           </h3>
+           
+          <p className="mt-1 text-sm leading-5 text-slate-600 sm:text-[15px]">
+            {localStorage.getItem("role") === "ADMIN"
+              ? "Get notified when clients send messages on security reports."
+              : "Get notified when a new security report is available."}
+          </p>
 
-            <p className="mt-1 text-sm leading-5 text-slate-600 sm:text-[15px]">
-              Get notified when a new security
-              report is available.
-            </p>
           </div>
         </div>
 
