@@ -65,59 +65,38 @@ const getPlainText = (html: string) =>
 const statusFilter =
   searchParams.get("status");
 
-  
 
+useEffect(() => {
+  const loadData = async () => {
+    try {
+      const userId = Number(localStorage.getItem("userId"));
 
-  useEffect(() => {
-
-    const loadData = async () => {
-
-      try {
-
-        const userId =
-          Number(
-            localStorage.getItem(
-              "userId"
-            )
-          );
-
-        const clientData =
-          await getClientByUserId(
-            userId
-          );
-
-        setClient(clientData);
+      const clientData = await getClientByUserId(userId);
+      setClient(clientData);
 
       const reportData = isFilterMode
-      
-          ? await getSubmittedReportsByDateRange(
-              fromDate,
-              toDate,
-              clientData.id,
-              page,
-              5
-            )
-          : await getSubmittedReportsByClientId(
-              clientData.id,
-              page,
-              5
-            );
+        ? await getSubmittedReportsByDateRange(
+            fromDate,
+            toDate,
+            clientData.id,
+            page,
+            5
+          )
+        : await getSubmittedReportsByClientId(
+            clientData.id,
+            page,
+            5
+          );
 
-        setReports(reportData.content || []);
-        setTotalPages(reportData.totalPages || 0);
+      setReports(reportData.content || []);
+      setTotalPages(reportData.totalPages || 0);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
-
-      } catch (error) {
-
-        console.error(error);
-
-      }
-
-    };
-
-    loadData();
-
- }, [page]);
+  loadData();
+}, [page, isFilterMode]);
 
  const reportList = useMemo(() => {
 
@@ -136,60 +115,57 @@ const statusFilter =
 }, [reports, statusFilter]);
   
 
-  const handleSearch = async () => {
-
+const handleSearch = async () => {
   if (!fromDate || !toDate) {
     alert("Please select both dates");
     return;
   }
 
-  try {
-
-    setPage(0);
-
-    const data =
-      await getSubmittedReportsByDateRange(
-        fromDate,
-        toDate,
-        client.id,
-        0,
-        5
-      );
-
-    setReports(data.content || []);
-
-    setTotalPages(data.totalPages || 0);
-
-  } catch (error) {
-
-    console.error(error);
-
+  if (!client?.id) {
+    console.error("Client information not loaded");
+    return;
   }
 
-};
+  try {
+    const data = await getSubmittedReportsByDateRange(
+      fromDate,
+      toDate,
+      client.id,
+      0,
+      5
+    );
 
+    setIsFilterMode(true);
+    setPage(0);
+    setReports(data.content || []);
+    setTotalPages(data.totalPages || 0);
+  } catch (error) {
+    console.error(error);
+  }
+};
+ 
 
 const handleClear = async () => {
-
   setFromDate("");
-
   setToDate("");
-  
+  setIsFilterMode(false);
   setPage(0);
 
-      const reportData =
-          await getSubmittedReportsByClientId(
-            client.id,
-            0,
-            5
-          );
+  if (!client?.id) return;
+
+  try {
+    const reportData = await getSubmittedReportsByClientId(
+      client.id,
+      0,
+      5
+    );
 
     setReports(reportData.content || []);
-
     setTotalPages(reportData.totalPages || 0);
-
+  } catch (error) {
+    console.error(error);
+  }
 };
-
 
 const handleDownloadImage = async () => {
 
