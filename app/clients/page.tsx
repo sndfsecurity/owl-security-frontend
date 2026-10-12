@@ -18,6 +18,10 @@ import {
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<any[]>([]);
+
+  const [clientSearch, setClientSearch] = useState("");
+  const [showClientResults, setShowClientResults] = useState(false);
+
   const [loading, setLoading] = useState<boolean>(true);
   const [showForm, setShowForm] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
@@ -186,6 +190,41 @@ export default function ClientsPage() {
     loadClients();
   }, []);
 
+ 
+const matchingClients = clients.filter((client: any) => {
+  const query = clientSearch.trim().toLowerCase();
+
+  if (!query) return false;
+
+  return (
+    client.companyName?.toLowerCase().includes(query) ||
+    client.contactPerson?.toLowerCase().includes(query)
+  );
+});
+
+const openClientReports = (clientId: number) => {
+  window.location.href = `/clients/${clientId}/reports`;
+};
+
+const handleClientSearch = (event: React.FormEvent<HTMLFormElement>) => {
+  event.preventDefault();
+
+  const query = clientSearch.trim();
+
+  if (!query) {
+    setShowClientResults(false);
+    return;
+  }
+
+  setClientSearch(query);
+  setShowClientResults(true);
+
+  if (matchingClients.length === 1) {
+    openClientReports(matchingClients[0].id);
+  }
+};
+
+
   return (
     <DashboardLayout>
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
@@ -213,6 +252,102 @@ export default function ClientsPage() {
             {showForm ? '✕ Close Form' : '+ Add Client'}
           </button>
         </div>
+
+        
+      {/* Search Client Reports */}    
+            
+      <div className="mb-5 w-full max-w-2xl rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+        <form
+          onSubmit={handleClientSearch}
+          className="flex flex-col gap-2 sm:flex-row sm:items-center"
+        >
+          <div className="relative w-full sm:max-w-xs sm:flex-1">
+            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <circle cx="11" cy="11" r="7" strokeWidth="2" />
+                <path
+                  d="m16 16 4 4"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </span>
+
+            <input
+              type="text"
+              value={clientSearch}
+              onChange={(event) => {
+                setClientSearch(event.target.value);
+                setShowClientResults(false);
+              }}
+              onFocus={() => {
+                if (clientSearch.trim()) {
+                  setShowClientResults(true);
+                }
+              }}
+              placeholder="Search company or contact..."
+              className="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="submit"
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+            >
+              Search
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setClientSearch("");
+                setShowClientResults(false);
+              }}
+              className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
+            >
+              Clear
+            </button>
+          </div>
+        </form>
+
+        {showClientResults && clientSearch.trim() && (
+          <div className="mt-2 w-full max-w-md overflow-hidden rounded-lg border border-slate-200 bg-white">
+            {matchingClients.length > 0 ? (
+              matchingClients.map((client: any) => (
+                <button
+                  key={client.id}
+                  type="button"
+                  onClick={() => openClientReports(client.id)}
+                  className="flex w-full items-center justify-between gap-3 border-b border-slate-100 px-3 py-2 text-left last:border-b-0 hover:bg-blue-50"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-slate-800">
+                      {client.companyName}
+                    </p>
+                    <p className="truncate text-xs text-slate-500">
+                      {client.contactPerson}
+                    </p>
+                  </div>
+
+                  <span className="shrink-0 text-xs font-semibold text-blue-600">
+                    Reports →
+                  </span>
+                </button>
+              ))
+            ) : (
+              <p className="px-3 py-2 text-sm text-slate-500">
+                No matching client found.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
 
         {/* Add Client Form */}
         {showForm && (

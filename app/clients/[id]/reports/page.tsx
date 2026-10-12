@@ -1694,165 +1694,191 @@ const handleSendMessage = async () => {
         </div>
 
         {/* Report History - Mobile Cards */}
-        <div className="md:hidden space-y-4 mt-6">
-          <h2 className="text-xl font-bold text-slate-800">Report History</h2>
-          {reports.map((report: any) => (
-            <div key={report.id} className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-              <div className="p-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-blue-50">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-slate-400">Report</p>
-                    <h3 className="text-base font-bold text-slate-800 mt-0.5">
-                      {report.reportDate || "N/A"} • {report.reportTime || "N/A"}
-                    </h3>
-                  </div>
-                  <span className={`
-                    px-3 py-1 rounded-full text-xs font-semibold
-                    ${report.status === "INCIDENT"
-                      ? "bg-red-100 text-red-700"
-                      : report.status === "OBSERVATION"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : "bg-green-100 text-green-700"
-                    }
-                  `}>
-                    {report.status}
-                  </span>
-                </div>
-              </div>
-              <div className="p-4 space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-xs text-slate-400">Priority</span>
-                  <span className={`
-                    font-semibold text-xs
-                    ${report.priority === "HIGH"
-                      ? "text-red-600"
-                      : report.priority === "MEDIUM"
-                      ? "text-yellow-600"
-                      : "text-blue-600"
-                    }
-                  `}>
-                    {report.priority}
-                  </span>
-                </div>
+       
+         
+{/* Report History - Mobile Cards */}
+<div className="mt-6 space-y-4 md:hidden">
+  <h2 className="text-xl font-bold text-slate-800">
+    Report History
+  </h2>
 
-               <div>
-                  <span className="text-xs text-slate-400 block mb-1">
-                    Notes
-                  </span>
+  {reports.map((report: any) => {
+    const status = reportMessageStatuses[Number(report.id)];
+    const total = status?.totalMessages ?? 0;
+    const unread = status?.unreadMessages ?? 0;
 
-                  {report.notes ? (
-                    <div>
-                      <p className="text-sm text-slate-700 break-words">
-                        {getPlainText(report.notes).substring(0, 100)}
-                        {getPlainText(report.notes).length > 100 && "..."}
-                      </p>
+    const messageLabel =
+      total === 0
+        ? "Reply"
+        : unread > 0
+          ? `Unread (${unread})`
+          : `Chat (${total})`;
 
-                      {getPlainText(report.notes).length > 100 && (
-                        <button
-                          onClick={() => setSelectedNotes(report.notes)}
-                          className="mt-1 text-xs text-blue-600 hover:text-blue-700 font-semibold"
-                        >
-                          Read More
-                        </button>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-slate-700">
-                      {!report.pdfUrl ? "No Notes" : ""}
-                    </p>
-                  )}
+    const messageColor =
+      total === 0
+        ? "bg-blue-600 hover:bg-blue-700"
+        : unread > 0
+          ? "bg-amber-500 hover:bg-amber-600"
+          : "bg-green-600 hover:bg-green-700";
 
-                  {report.pdfUrl && (
-                    <button
-                      onClick={() => setSelectedViewPdf(report.pdfUrl)}
-                      className="mt-2 flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-semibold"
-                    >
-                      📄 View PDF
-                    </button>
-                  )}
-                </div>
+    const videos = report.videoUrls?.length
+      ? report.videoUrls
+      : report.videoUrl
+        ? [report.videoUrl]
+        : [];
 
-                <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
-                  {report.imageUrls && report.imageUrls.length > 0 && (
-                    <button
-                      onClick={() => {
-                        setSelectedViewImages(report.imageUrls);
-                        setCurrentImageIndex(0);
-                      }}
-                      className="flex-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold rounded-lg transition-all active:scale-95"
-                    >
-                      📷 View {report.imageUrls.length > 1 && `(${report.imageUrls.length})`}
-                    </button>
-                  )}
+    const hasImages = report.imageUrls?.length > 0;
+    const hasVideos = videos.length > 0;
 
-                 {(() => {
-                    const videos = report.videoUrls?.length
-                      ? report.videoUrls
-                      : report.videoUrl
-                        ? [report.videoUrl]
-                        : [];
+    return (
+      <div
+        key={report.id}
+        className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-blue-50 px-4 py-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+              Report Date &amp; Time
+            </p>
+            <p className="mt-1 break-words text-sm font-bold text-slate-800">
+              {report.reportDate || "N/A"}
+              <span className="mx-1 text-slate-400">•</span>
+              {report.reportTime || "N/A"}
+            </p>
+          </div>
 
-                    return videos.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedViewVideos(videos);
-                          setCurrentVideoIndex(0);
-                        }}
-                        className="flex-1 px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white text-xs font-semibold rounded-lg transition-all active:scale-95"
-                      >
-                        ▶ View ({videos.length})
-                      </button>
-                    );
-                  })()}
-
-                
-                  {(() => {
-                    const status = reportMessageStatuses[Number(report.id)];
-                    const total = status?.totalMessages ?? 0;
-                    const unread = status?.unreadMessages ?? 0;
-
-                    const label =
-                      total === 0
-                        ? "Reply"
-                        : unread > 0
-                          ? `Unread (${unread})`
-                          : `Chat (${total})`;
-
-                    
-                  const colorClass =
-                    total === 0
-                      ? "bg-blue-600 hover:bg-blue-700"
-                      : unread > 0
-                        ? "bg-amber-500 hover:bg-amber-600"
-                        : "bg-green-600 hover:bg-green-700";
-
-
-                    return (
-                      <button
-                        type="button"
-                        onClick={() => handleOpenConversation(report)}
-                        className={`px-3 py-1.5 ${colorClass} text-white text-xs font-semibold rounded-lg transition-all duration-200 active:scale-95`}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })()}
-
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteReport(report.id)}
-                      className="flex-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-lg transition-all active:scale-95"
-                    >
-                      Delete
-                    </button>
-
-
-                </div>
-              </div>
-            </div>
-          ))}
+          <span
+            className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${
+              report.status === "INCIDENT"
+                ? "bg-red-100 text-red-700"
+                : report.status === "OBSERVATION"
+                  ? "bg-yellow-100 text-yellow-700"
+                  : "bg-green-100 text-green-700"
+            }`}
+          >
+            {report.status || "N/A"}
+          </span>
         </div>
+
+        {/* Body */}
+        <div className="space-y-4 p-4">
+          {/* Priority */}
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs font-medium text-slate-500">
+              Priority
+            </span>
+
+            <span
+              className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                report.priority === "HIGH"
+                  ? "bg-red-100 text-red-700"
+                  : report.priority === "MEDIUM"
+                    ? "bg-yellow-100 text-yellow-700"
+                    : "bg-blue-100 text-blue-700"
+              }`}
+            >
+              {report.priority || "N/A"}
+            </span>
+          </div>
+
+          {/* Notes - Existing functionality preserved */}
+          <div className="rounded-xl bg-slate-50 p-3">
+            <span className="mb-1 block text-xs font-medium text-slate-400">
+              Notes
+            </span>
+
+            {report.notes ? (
+              <>
+                <p className="break-words text-sm text-slate-700">
+                  {getPlainText(report.notes).substring(0, 100)}
+                  {getPlainText(report.notes).length > 100 && "..."}
+                </p>
+
+                {getPlainText(report.notes).length > 100 && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedNotes(report.notes)}
+                    className="mt-2 text-xs font-semibold text-blue-600 hover:text-blue-700"
+                  >
+                    Read More
+                  </button>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-slate-700">
+                {!report.pdfUrl ? "No Notes" : ""}
+              </p>
+            )}
+
+            {report.pdfUrl && (
+              <button
+                type="button"
+                onClick={() => setSelectedViewPdf(report.pdfUrl)}
+                className="mt-2 flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700"
+              >
+                📄 View PDF
+              </button>
+            )}
+          </div>
+
+          {/* Attachments */}
+          {(hasImages || hasVideos) && (
+            <div className="flex flex-wrap items-center justify-center gap-2 border-t border-slate-100 pt-3">
+              {hasImages && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedViewImages(report.imageUrls);
+                    setCurrentImageIndex(0);
+                  }}
+                  className="shrink-0 whitespace-nowrap rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 active:scale-95"
+                >
+                  Image ({report.imageUrls.length})
+                </button>
+              )}
+
+              {hasVideos && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedViewVideos(videos);
+                    setCurrentVideoIndex(0);
+                  }}
+                  className="shrink-0 whitespace-nowrap rounded-lg bg-purple-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-purple-700 active:scale-95"
+                >
+                  Video ({videos.length})
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Actions */}
+        
+          <div className="flex items-center justify-center gap-3 border-t border-slate-100 pt-3">
+            <button
+              type="button"
+              onClick={() => handleOpenConversation(report)}
+              className={`inline-flex items-center justify-center whitespace-nowrap rounded-lg px-4 py-2 text-xs font-semibold text-white transition active:scale-95 ${messageColor}`}
+            >
+              {messageLabel}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleDeleteReport(report.id)}
+              className="inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-red-700 active:scale-95"
+            >
+              Delete
+            </button>
+          </div>
+
+        </div>
+      </div>
+    );
+  })}
+</div>
+
 
         {/* Pagination */}
         <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 mt-6">
