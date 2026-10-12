@@ -624,39 +624,41 @@ const handleSendMessage = async () => {
 </div>
 
 
-{/* Desktop Table */}
-<div className="hidden md:block bg-white rounded-xl shadow overflow-x-auto">
 
-  <table className="w-full min-w-[900px]">
+{/* Desktop Table */}
+
+<div className="hidden md:block w-full overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+
+  <table className="w-full min-w-[760px] table-fixed">
 
     <thead>
 
 <tr className="bg-red-900 text-white">
-        <th className="p-3 text-left">
+        <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide">
           Date  
         </th>
 
-        <th className="p-3 text-left">
+        <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide">
           Time
         </th>
 
-        <th className="p-3 text-left">
+        <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide">
           Status
         </th>
 
-        <th className="p-3 text-left">
+        <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide">
           Priority
         </th>
 
-        <th className="p-3 text-left">
+        <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide">
           Notes
         </th>
 
-        <th className="p-3 text-left">
+        <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide">
           Attachment
         </th>
 
-        <th className="p-3 text-left">
+        <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide">
           Reply
         </th>
 
@@ -734,49 +736,46 @@ const handleSendMessage = async () => {
 </td>
 
 
-<td className="p-3">
-  <div className="flex flex-col gap-2">
+<td className="p-3 align-middle">
+  <div className="flex w-full items-center justify-center gap-2">
     {report.imageUrls?.length > 0 && (
       <button
+        type="button"
         onClick={() => {
           setSelectedImages(report.imageUrls);
           setCurrentImageIndex(0);
         }}
-        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap"
+        className="shrink-0 whitespace-nowrap rounded-md bg-blue-600 px-2 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700"
       >
-        View Image
-        {report.imageUrls.length > 1
-          ? ` (${report.imageUrls.length})`
-          : ""}
+        Image ({report.imageUrls.length})
       </button>
     )}
 
     {(report.videoUrls?.length > 0 || report.videoUrl) && (
-          <button
-            onClick={() => {
-              const videos = report.videoUrls?.length
-                ? report.videoUrls
-                : [report.videoUrl];
+      <button
+        type="button"
+        onClick={() => {
+          const videos = report.videoUrls?.length
+            ? report.videoUrls
+            : [report.videoUrl];
 
-              setSelectedViewVideos(videos);
-              setCurrentVideoIndex(0);
-            }}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap"
-          >
-            ▶ View ({report.videoUrls?.length || 1})
-          </button>
-        )}
+          setSelectedViewVideos(videos);
+          setCurrentVideoIndex(0);
+        }}
+        className="shrink-0 whitespace-nowrap rounded-md bg-purple-600 px-2 py-1.5 text-xs font-semibold text-white transition hover:bg-purple-700"
+      >
+        Video ({report.videoUrls?.length || 1})
+      </button>
+    )}
 
-        {!report.imageUrls?.length &&
-          !report.videoUrls?.length &&
-          !report.videoUrl && (
-            <span className="text-slate-500 text-sm">
-              No Attachment
-            </span>
-        )}
+    {!report.imageUrls?.length &&
+      !report.videoUrls?.length &&
+      !report.videoUrl &&
+      !report.pdfUrl && (
+        <span className="text-xs text-slate-400">N/A</span>
+      )}
   </div>
 </td>
-
 
 <td className="p-3">
   {(() => {
@@ -819,150 +818,169 @@ const handleSendMessage = async () => {
   </table>
 
 </div>
+
 {/* Mobile Cards */}
-<div className="md:hidden space-y-5">
 
-  {reportList.map((report: any) => (
+<div className="md:hidden space-y-4">
+  {reportList.map((report: any) => {
+    const messageStatus = reportMessageStatuses[report.id];
+    const totalMessages = messageStatus?.totalMessages ?? 0;
+    const unreadMessages = messageStatus?.unreadMessages ?? 0;
 
-    <div
-      key={report.id}
-      className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+    const buttonLabel =
+      unreadMessages > 0
+        ? `Unread (${unreadMessages})`
+        : totalMessages > 0
+          ? `Chat (${totalMessages})`
+          : "Reply";
 
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-800 to-indigo-700 text-white p-3">
+    const buttonClass =
+      unreadMessages > 0
+        ? "bg-amber-500 hover:bg-amber-600"
+        : totalMessages > 0
+          ? "bg-green-600 hover:bg-green-700"
+          : "bg-blue-600 hover:bg-blue-700";
 
-        <div className="flex justify-between items-center">
+    const hasImages = report.imageUrls?.length > 0;
+    const hasVideos =
+      report.videoUrls?.length > 0 || Boolean(report.videoUrl);
 
-          <span className="font-semibold">
-            {report.reportDate}
-          </span>
+    return (
+      <div
+        key={report.id}
+        className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3 bg-gradient-to-r from-blue-800 to-indigo-700 px-4 py-3 text-white">
+          <div className="min-w-0">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-blue-100">
+              Report Date
+            </p>
+            <p className="mt-0.5 text-sm font-bold">
+              {report.reportDate}
+            </p>
+          </div>
 
-          <span className="text-sm">
-            {report.reportTime}
-          </span>
-
+          <div className="shrink-0 text-right">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-blue-100">
+              Time
+            </p>
+            <p className="mt-0.5 text-sm font-semibold">
+              {report.reportTime}
+            </p>
+          </div>
         </div>
 
-      </div>
+        {/* Body */}
+        <div className="space-y-4 p-4">
+          {/* Status and Priority */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+              <p className="mb-2 text-xs font-medium text-slate-500">
+                Status
+              </p>
 
-      {/* Body */}
-      <div className="p-4">
+              <span
+                className={`inline-flex max-w-full rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                  report.status === "NORMAL"
+                    ? "bg-green-100 text-green-700"
+                    : report.status === "OBSERVATION"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-red-100 text-red-700"
+                }`}
+              >
+                {report.status}
+              </span>
+            </div>
 
-        <div className="flex justify-between items-center mb-3">
+            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+              <p className="mb-2 text-xs font-medium text-slate-500">
+                Priority
+              </p>
 
-          <span className="text-gray-600 text-sm">
-            Status
-          </span>
+              <span
+                className={`inline-flex max-w-full rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                  report.priority === "HIGH"
+                    ? "bg-red-100 text-red-700"
+                    : report.priority === "MEDIUM"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-green-100 text-green-700"
+                }`}
+              >
+                {report.priority}
+              </span>
+            </div>
+          </div>
 
-          <span
-            className={`px-3 py-1 rounded-full text-xs font-bold
-            ${
-              report.status === "NORMAL"
-                ? "bg-green-100 text-green-700"
-                : report.status === "OBSERVATION"
-                ? "bg-yellow-100 text-yellow-700"
-                : "bg-red-100 text-red-700"
-            }`}>
-            {report.status}
-          </span>
+          {/* Notes Section - Existing content preserved */}
+          <div className="bg-slate-50 rounded-xl p-3">
+            <p className="text-xs text-gray-500 mb-1">
+              Notes
+            </p>
 
-        </div>
+            {report.notes ? (
+              <>
+                <p className="text-sm text-gray-700 break-words">
+                  {getPlainText(report.notes).substring(0, 100)}
+                  {getPlainText(report.notes).length > 100 ? "..." : ""}
+                </p>
 
-        <div className="flex justify-between items-center mb-3">
+                {getPlainText(report.notes).length > 100 && (
+                  <button
+                    onClick={() => setSelectedNote(report.notes)}
+                    className="
+                      mt-3
+                      bg-green-600
+                      hover:bg-green-700
+                      text-white
+                      px-4
+                      py-2
+                      rounded-xl
+                      text-sm
+                      font-semibold
+                      shadow-md
+                      transition-all
+                      duration-200
+                    "
+                  >
+                    Read More
+                  </button>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-gray-700 break-words">
+                No Notes
+              </p>
+            )}
 
-          <span className="text-gray-600 text-sm">
-            Priority
-          </span>
-
-          <span
-            className={`px-3 py-1 rounded-full text-xs font-bold
-            ${
-              report.priority === "HIGH"
-                ? "bg-red-100 text-red-700"
-                : report.priority === "MEDIUM"
-                ? "bg-yellow-100 text-yellow-700"
-                : "bg-green-100 text-green-700"
-            }`}>
-            {report.priority}
-          </span>
-
-        </div>
-
-       
-{/* Notes Section */}
-
-<div className="bg-slate-50 rounded-xl p-3 mb-3">
-  <p className="text-xs text-gray-500 mb-1">
-    Notes
-  </p>
-
-  {report.notes ? (
-    <>
-      <p className="text-sm text-gray-700 break-words">
-        {getPlainText(report.notes).substring(0, 100)}
-        {getPlainText(report.notes).length > 100 ? "..." : ""}
-      </p>
-
-      {getPlainText(report.notes).length > 100 && (
-        <button
-          onClick={() => setSelectedNote(report.notes)}
-          className="
-            mt-3
-            bg-green-600
-            hover:bg-green-700
-            text-white
-            px-4
-            py-2
-            rounded-xl
-            text-sm
-            font-semibold
-            shadow-md
-            transition-all
-            duration-200
-          "
-        >
-          Read More
-        </button>
-      )}
-    </>
-  ) : (
-    <p className="text-sm text-gray-700 break-words">
-      No Notes
-    </p>
-  )}
-
-  {report.pdfUrl && (
-    <button
-      onClick={() => setSelectedPdf(report.pdfUrl)}
-      className="mt-2 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-lg transition-all"
-    >
-      📄 View PDF
-    </button>
-  )}
-</div>
-
-        {/* Image */}
-        
-            {report.imageUrls?.length > 0 && (
-
-            <button
-              onClick={() => {
-                setSelectedImages(report.imageUrls);
-                setCurrentImageIndex(0);
-              }}
-              className="w-full bg-blue-600 text-white py-2 rounded-xl"
-            >
-              View Image
-              {report.imageUrls.length > 1
-                ? ` (${report.imageUrls.length})`
-                : ""}
-            </button>
-
-          )}
-
-          
-          {(report.videoUrls?.length > 0 || report.videoUrl) && (
+            {report.pdfUrl && (
               <button
+                onClick={() => setSelectedPdf(report.pdfUrl)}
+                className="mt-2 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-lg transition-all"
+              >
+                📄 View PDF
+              </button>
+            )}
+          </div>
+
+          {/* Attachments */}
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {hasImages && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedImages(report.imageUrls);
+                  setCurrentImageIndex(0);
+                }}
+                className="shrink-0 whitespace-nowrap rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 active:scale-95"
+              >
+                Image ({report.imageUrls.length})
+              </button>
+            )}
+
+            {hasVideos && (
+              <button
+                type="button"
                 onClick={() => {
                   const videos = report.videoUrls?.length
                     ? report.videoUrls
@@ -971,69 +989,37 @@ const handleSendMessage = async () => {
                   setSelectedViewVideos(videos);
                   setCurrentVideoIndex(0);
                 }}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-xl"
+                className="shrink-0 whitespace-nowrap rounded-lg bg-purple-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-purple-700 active:scale-95"
               >
-                ▶ View Videos ({report.videoUrls?.length || 1})
+                Video ({report.videoUrls?.length || 1})
               </button>
             )}
 
-        {/* No Attachment */}
+            {!hasImages &&
+              !hasVideos &&
+              !report.pdfUrl && (
+                <span className="text-xs text-slate-400">
+                  N/A
+                </span>
+              )}
+          </div>
 
-        {!report.imageUrls?.length &&
-            !report.videoUrls?.length &&
-            !report.videoUrl && (
-              <div className="w-full bg-gray-100 text-center py-2 rounded-xl text-gray-500">
-                No Attachment
-              </div>
-          )}
-
-          {!report.imageUrls?.length &&
-            !report.videoUrls?.length &&
-            !report.videoUrl && (
-              <div className="w-full bg-gray-100 text-center py-2 rounded-xl text-gray-500">
-                No Attachment
-              </div>
-            )}
-
-            {/* Messages Button */}
-           
-            {(() => {
-              const messageStatus = reportMessageStatuses[report.id];
-              const totalMessages = messageStatus?.totalMessages ?? 0;
-              const unreadMessages = messageStatus?.unreadMessages ?? 0;
-
-              const buttonLabel =
-                unreadMessages > 0
-                  ? `Unread (${unreadMessages})`
-                  : totalMessages > 0
-                    ? `Chat (${totalMessages})`
-                    : "Reply";
-
-              const buttonClass =
-                unreadMessages > 0
-                  ? "bg-amber-500 hover:bg-amber-600"
-                  : totalMessages > 0
-                    ? "bg-green-600 hover:bg-green-700"
-                    : "bg-blue-600 hover:bg-blue-700";
-
-              return (
-                <button
-                  type="button"
-                  onClick={() => handleOpenConversation(report)}
-                  className={`mt-2 w-full rounded-xl px-3 py-2.5 text-sm font-semibold text-white transition active:scale-95 ${buttonClass}`}
-                >
-                  {buttonLabel}
-                </button>
-              );
-            })()}
-
+          {/* Conversation Button */}
+          <div className="flex justify-center border-t border-slate-100 pt-3">
+            <button
+              type="button"
+              onClick={() => handleOpenConversation(report)}
+              className={`inline-flex min-w-[120px] max-w-full items-center justify-center rounded-lg px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:shadow active:scale-95 ${buttonClass}`}
+            >
+              {buttonLabel}
+            </button>
+          </div>
+        </div>
       </div>
-
-    </div>
-
-  ))}
-
+    );
+  })}
 </div>
+
 
 {/* pagination............. */}
 
