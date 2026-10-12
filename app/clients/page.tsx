@@ -254,7 +254,8 @@ const handleClientSearch = (event: React.FormEvent<HTMLFormElement>) => {
         </div>
 
         
-      {/* Search Client Reports */}    
+      {/* Search Client Reports */}
+    
             
       <div className="mb-5 w-full max-w-2xl rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
         <form
@@ -290,7 +291,7 @@ const handleClientSearch = (event: React.FormEvent<HTMLFormElement>) => {
                   setShowClientResults(true);
                 }
               }}
-              placeholder="Search company or contact..."
+              placeholder="Search company or contact person..."
               className="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </div>
