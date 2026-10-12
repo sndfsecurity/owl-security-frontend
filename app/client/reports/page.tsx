@@ -8,15 +8,18 @@ import NotesViewer from "@/components/NotesViewer";
 import {
   getReportMessages,
   sendReportMessage,
+  getReportMessageStatus,
   type ReportMessage,
+  type ReportMessageStatus,
 } from "@/services/reportMessageService";
+
 
 const PdfViewer = dynamic(
   () => import("@/components/PdfViewer"),
   { ssr: false }
 );
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import ClientLayout from "@/components/layout/ClientLayout";
 
@@ -38,6 +41,10 @@ import { FiDownload } from "react-icons/fi";
   const [client, setClient] = useState<any>(null);
 
   const [reports, setReports] = useState<any[]>([]);
+
+  const [reportMessageStatuses, setReportMessageStatuses] = useState<
+    Record<number, ReportMessageStatus>
+  >({});
 
   const [isFilterMode, setIsFilterMode] = useState(false);
 
@@ -83,6 +90,8 @@ const [messageError, setMessageError] = useState("");
 
 const searchParams = useSearchParams();
 
+const handledNotificationRef = useRef<string | null>(null);
+
 const getPlainText = (html: string) =>
   html.replace(/<[^>]*>/g, "").trim();
 
@@ -121,6 +130,45 @@ useEffect(() => {
 
   loadData();
 }, [page, isFilterMode]);
+
+
+
+useEffect(() => {
+  let cancelled = false;
+
+  const loadMessageStatuses = async () => {
+    if (reports.length === 0) {
+      setReportMessageStatuses({});
+      return;
+    }
+
+    try {
+      const statusEntries = await Promise.all(
+        reports.map(async (report) => {
+          const status = await getReportMessageStatus(report.id);
+
+          return [report.id, status] as const;
+        })
+      );
+
+      if (!cancelled) {
+        setReportMessageStatuses((previous) => ({
+          ...previous,
+          ...Object.fromEntries(statusEntries),
+        }));
+      }
+    } catch (error) {
+      console.error("Failed to load report message statuses:", error);
+    }
+  };
+
+  loadMessageStatuses();
+
+  return () => {
+    cancelled = true;
+  };
+}, [reports]);
+
 
  const reportList = useMemo(() => {
 
@@ -229,6 +277,7 @@ if (selectedImages.length === 0) return;
 };
 
 
+  
 const handleOpenConversation = async (report: any) => {
   setConversationReport(report);
   setMessages([]);
@@ -239,13 +288,153 @@ const handleOpenConversation = async (report: any) => {
   try {
     const data = await getReportMessages(report.id);
     setMessages(data);
+
+    // Refresh status after messages are marked as read.
+    const status = await getReportMessageStatus(report.id);
+
+    setReportMessageStatuses((previous) => ({
+      ...previous,
+      [report.id]: status,
+    }));
   } catch (error) {
-    console.error("Failed to load report messages:", error);
+    console.error("Failed to load report conversation:", error);
     setMessageError("Unable to load messages. Please try again.");
   } finally {
     setMessagesLoading(false);
   }
 };
+
+
+useEffect(() => {
+  if (!client?.id) return;
+
+  const reportIdParam = searchParams.get("reportId");
+  if (!reportIdParam) return;
+
+  const reportId = Number(reportIdParam);
+
+  if (!Number.isInteger(reportId) || reportId <= 0) return;
+
+  const notificationKey = `${client.id}-${reportId}`;
+
+  if (handledNotificationRef.current === notificationKey) return;
+
+  let cancelled = false;
+
+  const findReportAndOpenConversation = async () => {
+    try {
+      // Search all pages until the notification's report is found.
+      const firstPage = await getSubmittedReportsByClientId(
+        client.id,
+        0,
+        5
+      );
+
+      const pagesToSearch = firstPage.totalPages || 0;
+      let matchingReport: any = null;
+      let matchingPage = 0;
+      let matchingPageData: any = firstPage;
+
+      for (let currentPage = 0; currentPage < pagesToSearch; currentPage++) {
+        if (cancelled) return;
+
+        const pageData =
+          currentPage === 0
+            ? firstPage
+            : await getSubmittedReportsByClientId(
+                client.id,
+                currentPage,
+                5
+              );
+
+        const foundReport = (pageData.content || []).find(
+          (report: any) => Number(report.id) === reportId
+        );
+
+        if (foundReport) {
+          matchingReport = foundReport;
+          matchingPage = currentPage;
+          matchingPageData = pageData;
+          break;
+        }
+      }
+
+      if (cancelled) return;
+
+      if (!matchingReport) {
+        console.error(
+          "Notification report was not found:",
+          reportId
+        );
+        return;
+      }
+
+      // Load the page containing the requested report.
+      handledNotificationRef.current = notificationKey;
+
+      setIsFilterMode(false);
+      setFromDate("");
+      setToDate("");
+      setPage(matchingPage);
+      setReports(matchingPageData.content || []);
+      setTotalPages(matchingPageData.totalPages || 0);
+
+      // Open the matching conversation automatically.
+      setConversationReport(matchingReport);
+      setMessages([]);
+      setNewMessage("");
+      setMessageError("");
+      setMessagesLoading(true);
+
+      try {
+        const messageData = await getReportMessages(reportId);
+
+        if (cancelled) return;
+
+        setMessages(messageData);
+
+        const status = await getReportMessageStatus(reportId);
+
+        if (cancelled) return;
+
+        setReportMessageStatuses((previous) => ({
+          ...previous,
+          [reportId]: status,
+        }));
+      } catch (error) {
+        if (cancelled) return;
+
+        console.error(
+          "Failed to open notification conversation:",
+          error
+        );
+
+        setMessageError(
+          "Unable to load messages. Please try again."
+        );
+      } finally {
+        if (!cancelled) {
+          setMessagesLoading(false);
+        }
+      }
+    } catch (error) {
+      if (!cancelled) {
+        console.error(
+          "Failed to find notification report:",
+          error
+        );
+      }
+    }
+  };
+
+  findReportAndOpenConversation();
+
+  return () => {
+    cancelled = true;
+  };
+}, [client?.id, searchParams]);
+
+
 
 const handleSendMessage = async () => {
   const message = newMessage.trim();
@@ -590,13 +779,35 @@ const handleSendMessage = async () => {
 
 
 <td className="p-3">
-  <button
-    type="button"
-    onClick={() => handleOpenConversation(report)}
-    className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
-  >
-    Reply
-  </button>
+  {(() => {
+    const messageStatus = reportMessageStatuses[report.id];
+    const totalMessages = messageStatus?.totalMessages ?? 0;
+    const unreadMessages = messageStatus?.unreadMessages ?? 0;
+
+    const buttonLabel =
+      unreadMessages > 0
+        ? `Unread (${unreadMessages})`
+        : totalMessages > 0
+          ? `Chat (${totalMessages})`
+          : "Reply";
+
+    const buttonClass =
+      unreadMessages > 0
+        ? "bg-amber-500 hover:bg-amber-600"
+        : totalMessages > 0
+          ? "bg-green-600 hover:bg-green-700"
+          : "bg-blue-600 hover:bg-blue-700";
+
+    return (
+      <button
+        type="button"
+        onClick={() => handleOpenConversation(report)}
+        className={`rounded-lg px-3 py-2 text-xs font-semibold text-white transition ${buttonClass}`}
+      >
+        {buttonLabel}
+      </button>
+    );
+  })()}
 </td>
 
 </tr>
@@ -785,14 +996,36 @@ const handleSendMessage = async () => {
             )}
 
             {/* Messages Button */}
-            <button
-              type="button"
-              onClick={() => handleOpenConversation(report)}
-              className="w-full mt-2 rounded-xl bg-blue-600 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 active:scale-95"
-            >
-              Reply
-            </button>
+           
+            {(() => {
+              const messageStatus = reportMessageStatuses[report.id];
+              const totalMessages = messageStatus?.totalMessages ?? 0;
+              const unreadMessages = messageStatus?.unreadMessages ?? 0;
 
+              const buttonLabel =
+                unreadMessages > 0
+                  ? `Unread (${unreadMessages})`
+                  : totalMessages > 0
+                    ? `Chat (${totalMessages})`
+                    : "Reply";
+
+              const buttonClass =
+                unreadMessages > 0
+                  ? "bg-amber-500 hover:bg-amber-600"
+                  : totalMessages > 0
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-blue-600 hover:bg-blue-700";
+
+              return (
+                <button
+                  type="button"
+                  onClick={() => handleOpenConversation(report)}
+                  className={`mt-2 w-full rounded-xl px-3 py-2.5 text-sm font-semibold text-white transition active:scale-95 ${buttonClass}`}
+                >
+                  {buttonLabel}
+                </button>
+              );
+            })()}
 
       </div>
 
@@ -1065,29 +1298,63 @@ const handleSendMessage = async () => {
 {conversationReport && (
   <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 p-3 sm:p-5">
     <div className="flex max-h-[85dvh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-      <div className="flex items-center justify-between border-b p-4">
-        <div>
-          <h2 className="text-lg font-bold text-slate-800">
-            Report Conversation
-          </h2>
-          <p className="text-sm text-slate-500">
-            Report #{conversationReport.id} · {conversationReport.reportDate}
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => {
-            setConversationReport(null);
-            setMessages([]);
-            setNewMessage("");
-            setMessageError("");
-          }}
-          className="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700"
-        >
-          Close
-        </button>
+          
+    <div className="flex items-center justify-between gap-3 border-b p-4">
+      <div>
+        <h2 className="text-lg font-bold text-slate-800">
+          Report Conversation
+        </h2>
+        <p className="text-sm text-slate-500">
+          {client?.companyName || "Client"}
+        </p>
       </div>
+
+      <button
+        type="button"
+        onClick={() => {
+          setConversationReport(null);
+          setMessages([]);
+          setNewMessage("");
+          setMessageError("");
+        }}
+        className="shrink-0 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700"
+      >
+        Close
+      </button>
+    </div>
+
+    
+<div className="grid grid-cols-2 gap-3 border-b bg-white p-4 sm:grid-cols-4">
+  <div className="rounded-lg bg-slate-50 p-3">
+    <p className="text-xs font-medium text-slate-500">Date</p>
+    <p className="mt-1 text-sm font-semibold text-slate-800">
+      {conversationReport.reportDate || "—"}
+    </p>
+  </div>
+
+  <div className="rounded-lg bg-slate-50 p-3">
+    <p className="text-xs font-medium text-slate-500">Time</p>
+    <p className="mt-1 text-sm font-semibold text-slate-800">
+      {conversationReport.reportTime || "—"}
+    </p>
+  </div>
+
+    <div className="rounded-lg bg-slate-50 p-3">
+      <p className="text-xs font-medium text-slate-500">Status</p>
+      <p className="mt-1 text-sm font-semibold text-slate-800">
+        {conversationReport.status || "—"}
+      </p>
+    </div>
+
+    <div className="rounded-lg bg-slate-50 p-3">
+      <p className="text-xs font-medium text-slate-500">Priority</p>
+      <p className="mt-1 text-sm font-semibold text-slate-800">
+        {conversationReport.priority || "—"}
+      </p>
+    </div>
+  </div>
+
+
 
       <div className="min-h-[200px] flex-1 space-y-3 overflow-y-auto bg-slate-50 p-4">
         {messagesLoading ? (

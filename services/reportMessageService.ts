@@ -11,6 +11,11 @@ export interface ReportMessage {
   createdAt: string;
 }
 
+export interface ReportMessageStatus {
+  totalMessages: number;
+  unreadMessages: number;
+}
+
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
 
@@ -64,3 +69,23 @@ export async function sendReportMessage(
 
   return response.json();
 }
+
+
+export async function getReportMessageStatus(
+  reportId: number
+): Promise<ReportMessageStatus> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/reports/${reportId}/messages/status`,
+    {
+      method: "GET",
+      headers: getAuthHeaders(),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to load report message status");
+  }
+
+  return response.json();
+}
+

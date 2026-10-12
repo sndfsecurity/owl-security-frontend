@@ -4,7 +4,7 @@
 
 import NotesViewer from "@/components/NotesViewer";
 import { useEffect, useState, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { FiDownload } from "react-icons/fi";
 import { getClientById } from "@/services/clientService";
@@ -33,7 +33,9 @@ import {
 import {
   getReportMessages,
   sendReportMessage,
+  getReportMessageStatus,
   type ReportMessage,
+  type ReportMessageStatus,
 } from "@/services/reportMessageService";
 
 import dynamic from "next/dynamic";
@@ -59,7 +61,11 @@ const getPlainText = (html: string) =>
 
 
 export default function ClientReportsPage() {
-  const params = useParams();
+const params = useParams();
+const searchParams = useSearchParams();
+const pendingNotificationReportId = useRef<number | null>(null);
+const handledNotificationRef = useRef<string | null>(null);
+
   const clientId = Number(params.id);
   const [showForm, setShowForm] = useState(false);
   const [client, setClient] = useState<any>(null);
@@ -113,6 +119,9 @@ const [newMessage, setNewMessage] = useState("");
 const [messagesLoading, setMessagesLoading] = useState(false);
 const [messageSending, setMessageSending] = useState(false);
 const [messageError, setMessageError] = useState("");
+const [reportMessageStatuses, setReportMessageStatuses] = useState<
+  Record<number, ReportMessageStatus>
+>({});
 
 
   const [reportData, setReportData] = useState({
@@ -132,19 +141,49 @@ const [messageError, setMessageError] = useState("");
     }
   };
 
-  const loadReports = async (currentPage = page) => {
-    try {
-          const data = await getSubmittedReportsByClientId(
-            clientId,
-            currentPage,
-            5
-          );      
-      setReports(data.content);
-      setTotalPages(data.totalPages);
-    } catch (error) {
-      console.error(error);
-    }
-  };
+ const loadReports = async (currentPage = page) => {
+  try {
+    const data = await getSubmittedReportsByClientId(
+      clientId,
+      currentPage,
+      5
+    );
+
+    setReports(data.content);
+    setTotalPages(data.totalPages);
+
+    await loadReportMessageStatuses(data.content);
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+
+  const loadReportMessageStatuses = async (reportList: any[]) => {
+  const results = await Promise.all(
+    reportList.map(async (report) => {
+      try {
+        const status = await getReportMessageStatus(Number(report.id));
+
+        return [Number(report.id), status] as const;
+      } catch (error) {
+        console.error(
+          `Failed to load message status for report ${report.id}:`,
+          error
+        );
+
+        return [Number(report.id), null] as const;
+      }
+    })
+  );
+
+  setReportMessageStatuses((previous) => ({
+    ...previous,
+    ...Object.fromEntries(
+      results.filter((entry) => entry[1] !== null)
+    ),
+  }));
+};
 
   const loadDrafts = async () => {
   try {
@@ -275,13 +314,6 @@ const handleSaveDraft = async () => {
       );
     }
 
-    /*
-     * These are the CURRENT media items.
-     *
-     * If an old draft image/video was removed,
-     * it is already removed from draftImageUrls /
-     * draftVideoUrls, so it will not come back.
-     */
     const allImageUrls = [
       ...draftImageUrls,
       ...newImageUrls,
@@ -309,23 +341,14 @@ const handleSaveDraft = async () => {
     let savedDraft;
 
     if (activeDraftId) {
-      /*
-       * Existing draft:
-       * UPDATE THE SAME DATABASE RECORD.
-       *
-       * If selectedPdf exists, the new PDF will replace
-       * the old PDF on the backend.
-       */
+    
       savedDraft = await updateDraftWithPdf(
         activeDraftId,
         payload,
         selectedPdf
       );
     } else {
-      /*
-       * New draft:
-       * CREATE ONE NEW DATABASE RECORD.
-       */
+    
       savedDraft = await createDraft(
         payload,
         selectedPdf
@@ -353,9 +376,6 @@ const handleSaveDraft = async () => {
         : draftPdfUrl
     );
 
-    /*
-     * Newly selected local files have now been uploaded.
-     */
     setSelectedImages([]);
 
     clearSelectedVideos();
@@ -398,10 +418,6 @@ const handleSubmit = async () => {
   try {
     let newImageUrls: string[] = [];
     let newVideoUrls: string[] = [];
-
-    /*
-     * Upload newly selected local files first.
-     */
     if (selectedImages.length > 0) {
       newImageUrls = await uploadImages(selectedImages);
     }
@@ -412,15 +428,6 @@ const handleSubmit = async () => {
         removeAudio
       );
     }
-
-    /*
-     * Current final media list.
-     *
-     * For a continued draft, this contains:
-     * old saved media still kept
-     * +
-     * newly selected media
-     */
     const finalImageUrls = activeDraftId
       ? [
           ...draftImageUrls,
@@ -449,18 +456,6 @@ const handleSubmit = async () => {
       draftData: "",
     };
 
-    /*
-     * IMPORTANT:
-     *
-     * New report:
-     *      createReport()
-     *
-     * Existing draft:
-     *      submitDraft()
-     *
-     * Therefore an existing draft will NOT create
-     * another database record.
-     */
     if (activeDraftId) {
       await submitDraft(
         activeDraftId,
@@ -475,10 +470,6 @@ const handleSubmit = async () => {
     }
 
     alert("Report Saved Successfully");
-
-    /*
-     * Reset the report form completely.
-     */
     setSelectedImages([]);
 
     clearSelectedVideos();
@@ -505,10 +496,6 @@ const handleSubmit = async () => {
     });
 
     setShowForm(false);
-
-    /*
-     * Refresh both sections.
-     */
     await loadReports();
     await loadDrafts();
   } catch (error) {
@@ -544,6 +531,115 @@ const handleSubmit = async () => {
   useEffect(() => {
   loadDrafts();
 }, [clientId]);
+
+// convesration .....
+
+useEffect(() => {
+  const reportIdParam = searchParams.get("reportId");
+  const shouldOpenConversation =
+    searchParams.get("openConversation") === "true";
+
+  if (!reportIdParam || !shouldOpenConversation || !clientId) {
+    return;
+  }
+
+  const reportId = Number(reportIdParam);
+
+  if (!Number.isFinite(reportId) || reportId <= 0) {
+    return;
+  }
+
+  const notificationKey = `${clientId}-${reportId}`;
+
+  if (handledNotificationRef.current === notificationKey) {
+    return;
+  }
+
+  handledNotificationRef.current = notificationKey;
+
+  let cancelled = false;
+
+  const findReportPage = async () => {
+    try {
+      const firstPage = await getSubmittedReportsByClientId(
+        clientId,
+        0,
+        5
+      );
+
+      let foundPage = -1;
+      let foundReport: any = null;
+
+      if (firstPage.content?.some(
+        (report: any) => Number(report.id) === reportId
+      )) {
+        foundPage = 0;
+        foundReport = firstPage.content.find(
+          (report: any) => Number(report.id) === reportId
+        );
+      }
+
+      for (
+        let currentPage = 1;
+        !foundReport && currentPage < firstPage.totalPages;
+        currentPage++
+      ) {
+        const data = await getSubmittedReportsByClientId(
+          clientId,
+          currentPage,
+          5
+        );
+
+        const matchingReport = data.content?.find(
+          (report: any) => Number(report.id) === reportId
+        );
+
+        if (matchingReport) {
+          foundPage = currentPage;
+          foundReport = matchingReport;
+        }
+      }
+
+      if (cancelled) return;
+
+      if (!foundReport) {
+        handledNotificationRef.current = null;
+        console.error("Notification report not found:", reportId);
+        return;
+      }
+
+      pendingNotificationReportId.current = reportId;
+      setPage(foundPage);
+    } catch (error) {
+      handledNotificationRef.current = null;
+      console.error("Failed to locate notification report:", error);
+    }
+  };
+
+  findReportPage();
+
+  return () => {
+    cancelled = true;
+  };
+}, [clientId, searchParams]);
+
+
+useEffect(() => {
+  const reportId = pendingNotificationReportId.current;
+
+  if (reportId === null) return;
+
+  const matchingReport = reports.find(
+    (report: any) => Number(report.id) === reportId
+  );
+
+  if (!matchingReport) return;
+
+  pendingNotificationReportId.current = null;
+
+  handleOpenConversation(matchingReport);
+}, [reports]);
+
 
   const handleDownloadImage = async () => {
     if (!selectedViewImages) return;
@@ -597,23 +693,31 @@ const handleSubmit = async () => {
 
 
 // Open report conversation
-const handleOpenConversation = async (report: any) => {
-  setConversationReport(report);
-  setMessages([]);
-  setNewMessage("");
-  setMessageError("");
-  setMessagesLoading(true);
 
-  try {
-    const data = await getReportMessages(report.id);
-    setMessages(data);
-  } catch (error) {
-    console.error("Failed to load report messages:", error);
-    setMessageError("Unable to load messages. Please try again.");
-  } finally {
-    setMessagesLoading(false);
-  }
-};
+  const handleOpenConversation = async (report: any) => {
+    setConversationReport(report);
+    setMessages([]);
+    setNewMessage("");
+    setMessageError("");
+    setMessagesLoading(true);
+
+    try {
+      const data = await getReportMessages(report.id);
+      setMessages(data);
+
+      const status = await getReportMessageStatus(Number(report.id));
+
+      setReportMessageStatuses((previous) => ({
+        ...previous,
+        [Number(report.id)]: status,
+      }));
+    } catch (error) {
+      console.error("Failed to load report conversation:", error);
+      setMessageError("Unable to load messages. Please try again.");
+    } finally {
+      setMessagesLoading(false);
+    }
+  };
 
 // Send Admin reply
 const handleSendMessage = async () => {
@@ -1537,13 +1641,39 @@ const handleSendMessage = async () => {
 
                   <td className="p-4">
                     <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenConversation(report)}
-                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-all duration-200 active:scale-95"
-                      >
-                        Reply
-                      </button>
+                      
+                    {(() => {
+                      const status = reportMessageStatuses[Number(report.id)];
+                      const total = status?.totalMessages ?? 0;
+                      const unread = status?.unreadMessages ?? 0;
+
+                      const label =
+                        total === 0
+                          ? "Reply"
+                          : unread > 0
+                            ? `Unread (${unread})`
+                            : `Chat (${total})`;
+
+                      
+                        const colorClass =
+                          total === 0
+                            ? "bg-blue-600 hover:bg-blue-700"
+                            : unread > 0
+                              ? "bg-amber-500 hover:bg-amber-600"
+                              : "bg-green-600 hover:bg-green-700";
+
+
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenConversation(report)}
+                          className={`px-3 py-1.5 ${colorClass} text-white text-xs font-semibold rounded-lg transition-all duration-200 active:scale-95`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })()}
+
 
                       <button
                         type="button"
@@ -1676,13 +1806,38 @@ const handleSendMessage = async () => {
                     );
                   })()}
 
-                 <button
-                      type="button"
-                      onClick={() => handleOpenConversation(report)}
-                      className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-all active:scale-95"
-                    >
-                      Reply
-                    </button>
+                
+                  {(() => {
+                    const status = reportMessageStatuses[Number(report.id)];
+                    const total = status?.totalMessages ?? 0;
+                    const unread = status?.unreadMessages ?? 0;
+
+                    const label =
+                      total === 0
+                        ? "Reply"
+                        : unread > 0
+                          ? `Unread (${unread})`
+                          : `Chat (${total})`;
+
+                    
+                  const colorClass =
+                    total === 0
+                      ? "bg-blue-600 hover:bg-blue-700"
+                      : unread > 0
+                        ? "bg-amber-500 hover:bg-amber-600"
+                        : "bg-green-600 hover:bg-green-700";
+
+
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenConversation(report)}
+                        className={`px-3 py-1.5 ${colorClass} text-white text-xs font-semibold rounded-lg transition-all duration-200 active:scale-95`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })()}
 
                     <button
                       type="button"
@@ -1960,20 +2115,23 @@ const handleSendMessage = async () => {
             </div>
           )}
 
+ {/* Report Conversation Modal */}
 
-          {/* Report Conversation Modal */}
 {conversationReport && (
   <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-5">
     <div className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
 
       {/* Header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-slate-50 p-4">
-        <div>
-          <h2 className="text-lg font-bold text-slate-800">
+      
+            {/* Header */}
+      <div className="flex shrink-0 items-center justify-between gap-4 border-b border-slate-200 bg-white px-5 py-4 sm:px-6">
+        <div className="min-w-0">
+          <h2 className="text-lg font-bold text-slate-800 sm:text-xl">
             Report Conversation
           </h2>
-          <p className="text-sm text-slate-500">
-            Report #{conversationReport.id}
+
+          <p className="mt-1 truncate text-sm font-medium text-slate-500">
+            {client?.companyName || "Client"}
           </p>
         </div>
 
@@ -1985,10 +2143,47 @@ const handleSendMessage = async () => {
             setNewMessage("");
             setMessageError("");
           }}
-          className="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-600"
+          className="shrink-0 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-red-600 active:scale-95"
         >
           Close
         </button>
+      </div>
+
+            {/* Report Details */}
+      <div className="shrink-0 border-b border-slate-200 bg-slate-50 px-4 py-4 sm:px-5">
+        <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">
+          Report Details
+        </h3>
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="rounded-xl border border-slate-200 bg-white p-3">
+            <p className="text-xs font-medium text-slate-500">Date</p>
+            <p className="mt-1 break-words text-sm font-semibold text-slate-800">
+              {conversationReport.reportDate || "N/A"}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-3">
+            <p className="text-xs font-medium text-slate-500">Time</p>
+            <p className="mt-1 break-words text-sm font-semibold text-slate-800">
+              {conversationReport.reportTime || "N/A"}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-3">
+            <p className="text-xs font-medium text-slate-500">Status</p>
+            <p className="mt-1 break-words text-sm font-semibold text-slate-800">
+              {conversationReport.status || "N/A"}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-3">
+            <p className="text-xs font-medium text-slate-500">Priority</p>
+            <p className="mt-1 break-words text-sm font-semibold text-slate-800">
+              {conversationReport.priority || "N/A"}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Messages */}
