@@ -472,6 +472,81 @@ const handleSendMessage = async () => {
 };
 
 
+const sanitizeNotesHtml = (html: string): string => {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+
+  doc.querySelectorAll(
+    "script, style, iframe, object, embed, form"
+  ).forEach((element) => element.remove());
+
+  doc.body.querySelectorAll("*").forEach((element) => {
+    Array.from(element.attributes).forEach((attribute) => {
+      const name = attribute.name.toLowerCase();
+      const value = attribute.value.trim().toLowerCase();
+
+      if (
+        name.startsWith("on") ||
+        (
+          ["href", "src", "xlink:href"].includes(name) &&
+          (
+            value.startsWith("javascript:") ||
+            value.startsWith("data:")
+          )
+        )
+      ) {
+        element.removeAttribute(attribute.name);
+      }
+    });
+  });
+
+  return doc.body.innerHTML;
+};
+
+const truncateNotesHtml = (
+  html: string,
+  maxLength: number
+): string => {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  let count = 0;
+  let finished = false;
+
+  const walk = (node: Node): void => {
+    if (finished) {
+      node.parentNode?.removeChild(node);
+      return;
+    }
+
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent || "";
+      const remaining = maxLength - count;
+
+      if (text.length > remaining) {
+        node.textContent = text.slice(0, remaining);
+        count = maxLength;
+        finished = true;
+      } else {
+        count += text.length;
+        if (count >= maxLength) finished = true;
+      }
+
+      return;
+    }
+
+    for (const child of Array.from(node.childNodes)) {
+      if (finished) {
+        child.parentNode?.removeChild(child);
+      } else {
+        walk(child);
+      }
+    }
+  };
+
+  walk(doc.body);
+  return doc.body.innerHTML;
+};
+
+
+
   return (
 
      <ClientLayout>
@@ -691,31 +766,28 @@ const handleSendMessage = async () => {
   </td>
 
   
-  <td className="p-3">
+  
+<td className="p-3">
   {report.notes ? (
     <>
-      <span>
-        {getPlainText(report.notes).substring(0, 50)}
-        {getPlainText(report.notes).length > 50 ? "..." : ""}
-      </span>
+      <div className="break-words text-sm text-slate-600">
+        <div
+          className="report-notes-preview"
+          dangerouslySetInnerHTML={{
+            __html: sanitizeNotesHtml(
+              getPlainText(report.notes).length > 50
+                ? truncateNotesHtml(report.notes, 50)
+                : report.notes
+            ),
+          }}
+        />
+      </div>
 
       {getPlainText(report.notes).length > 50 && (
         <button
+          type="button"
           onClick={() => setSelectedNote(report.notes)}
-          className="
-            ml-2
-            bg-green-600
-            hover:bg-green-700
-            text-white
-            px-4
-            py-2
-            rounded-lg
-            text-sm
-            font-semibold
-            shadow-md
-            transition-all
-            duration-200
-          "
+          className="mt-1 text-xs font-semibold text-green-700 hover:text-green-800"
         >
           Read More
         </button>
@@ -727,6 +799,7 @@ const handleSendMessage = async () => {
 
   {report.pdfUrl && (
     <button
+      type="button"
       onClick={() => setSelectedPdf(report.pdfUrl)}
       className="mt-1 block text-xs font-semibold text-red-600 hover:text-red-700"
     >
@@ -734,7 +807,6 @@ const handleSendMessage = async () => {
     </button>
   )}
 </td>
-
 
 <td className="p-3 align-middle">
   <div className="flex w-full items-center justify-center gap-2">
@@ -913,35 +985,32 @@ const handleSendMessage = async () => {
           </div>
 
           {/* Notes Section - Existing content preserved */}
-          <div className="bg-slate-50 rounded-xl p-3">
+              
+         <div className="bg-slate-50 rounded-xl p-3">
             <p className="text-xs text-gray-500 mb-1">
               Notes
             </p>
 
             {report.notes ? (
               <>
-                <p className="text-sm text-gray-700 break-words">
-                  {getPlainText(report.notes).substring(0, 100)}
-                  {getPlainText(report.notes).length > 100 ? "..." : ""}
-                </p>
+                <div className="text-sm text-gray-700 break-words">
+                  <div
+                    className="report-notes-preview"
+                    dangerouslySetInnerHTML={{
+                      __html: sanitizeNotesHtml(
+                        getPlainText(report.notes).length > 100
+                          ? truncateNotesHtml(report.notes, 100)
+                          : report.notes
+                      ),
+                    }}
+                  />
+                </div>
 
                 {getPlainText(report.notes).length > 100 && (
                   <button
+                    type="button"
                     onClick={() => setSelectedNote(report.notes)}
-                    className="
-                      mt-3
-                      bg-green-600
-                      hover:bg-green-700
-                      text-white
-                      px-4
-                      py-2
-                      rounded-xl
-                      text-sm
-                      font-semibold
-                      shadow-md
-                      transition-all
-                      duration-200
-                    "
+                    className="mt-3 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition-all duration-200"
                   >
                     Read More
                   </button>
@@ -955,6 +1024,7 @@ const handleSendMessage = async () => {
 
             {report.pdfUrl && (
               <button
+                type="button"
                 onClick={() => setSelectedPdf(report.pdfUrl)}
                 className="mt-2 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-lg transition-all"
               >

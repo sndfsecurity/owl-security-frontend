@@ -59,6 +59,76 @@ const getPlainText = (html: string) =>
   html.replace(/<[^>]*>/g, "").trim();
 
 
+const sanitizeNotesHtml = (html: string): string => {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+
+  doc.querySelectorAll(
+    "script, style, iframe, object, embed, form"
+  ).forEach((element) => element.remove());
+
+  doc.body.querySelectorAll("*").forEach((element) => {
+    [...element.attributes].forEach((attribute) => {
+      const name = attribute.name.toLowerCase();
+      const value = attribute.value.trim().toLowerCase();
+
+      if (
+        name.startsWith("on") ||
+        ((name === "href" || name === "src") &&
+          value.startsWith("javascript:"))
+      ) {
+        element.removeAttribute(attribute.name);
+      }
+    });
+  });
+
+  return doc.body.innerHTML;
+};
+
+const truncateNotesHtml = (
+  html: string,
+  maxLength: number
+): string => {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  let count = 0;
+
+  const walk = (node: Node): boolean => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent || "";
+      const remaining = maxLength - count;
+
+      if (text.length > remaining) {
+        node.textContent = text.slice(0, remaining);
+        count = maxLength;
+        return true;
+      }
+
+      count += text.length;
+      return count >= maxLength;
+    }
+
+    for (const child of Array.from(node.childNodes)) {
+      if (walk(child)) {
+        let next = child.nextSibling;
+
+        while (next) {
+          const current = next;
+          next = next.nextSibling;
+          current.remove();
+        }
+
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  walk(doc.body);
+  return doc.body.innerHTML;
+};
+
+
+
 
 export default function ClientReportsPage() {
 const params = useParams();
@@ -1553,36 +1623,54 @@ const handleSendMessage = async () => {
                       `}>
                         {report.priority}
                       </span>
-                    </td>
-
-                    <td className="p-4 max-w-[200px]">
-                          {report.notes && (
+                </td>
+             
+                  <td className="p-4 max-w-[200px]">
+                    {report.notes && (
+                      <>
+                        <div className="break-words text-sm text-slate-600">
+                          {getPlainText(report.notes).length > 50 ? (
                             <>
-                              <div className="break-words text-sm text-slate-600">
-                                {getPlainText(report.notes).substring(0, 50)}
-                                {getPlainText(report.notes).length > 50 && "..."}
-                              </div>
-
-                              {getPlainText(report.notes).length > 50 && (
-                                <button
-                                  onClick={() => setSelectedNotes(report.notes)}
-                                  className="mt-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
-                                >
-                                  Read More
-                                </button>
-                              )}
+                              <div
+                                className="report-notes-preview"
+                                dangerouslySetInnerHTML={{
+                                  __html: sanitizeNotesHtml(
+                                    truncateNotesHtml(report.notes, 50)
+                                  ),
+                                }}
+                              />
                             </>
+                          ) : (
+                            <div
+                              className="report-notes-preview"
+                              dangerouslySetInnerHTML={{
+                                __html: sanitizeNotesHtml(report.notes),
+                              }}
+                            />
                           )}
+                        </div>
 
-                          {report.pdfUrl && (
-                            <button
-                              onClick={() => setSelectedViewPdf(report.pdfUrl)}
-                              className="mt-1 flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-semibold"
-                            >
-                              📄 View PDF
-                            </button>
-                          )}
-                        </td>
+                        {getPlainText(report.notes).length > 50 && (
+                          <button
+                            onClick={() => setSelectedNotes(report.notes)}
+                            className="mt-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                          >
+                            Read More
+                          </button>
+                        )}
+                      </>
+                    )}
+
+                    {report.pdfUrl && (
+                      <button
+                        onClick={() => setSelectedViewPdf(report.pdfUrl)}
+                        className="mt-1 flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-semibold"
+                      >
+                        📄 View PDF
+                      </button>
+                    )}
+                  </td>
+
 
                   <td className="p-4">
                         <div className="flex flex-wrap gap-2">
@@ -1782,7 +1870,8 @@ const handleSendMessage = async () => {
             </span>
           </div>
 
-          {/* Notes - Existing functionality preserved */}
+          {/* Notes - Existing functionality preserved */}      
+          
           <div className="rounded-xl bg-slate-50 p-3">
             <span className="mb-1 block text-xs font-medium text-slate-400">
               Notes
@@ -1790,10 +1879,18 @@ const handleSendMessage = async () => {
 
             {report.notes ? (
               <>
-                <p className="break-words text-sm text-slate-700">
-                  {getPlainText(report.notes).substring(0, 100)}
-                  {getPlainText(report.notes).length > 100 && "..."}
-                </p>
+                <div className="break-words text-sm text-slate-700">
+                  <div
+                    className="report-notes-preview"
+                    dangerouslySetInnerHTML={{
+                      __html: sanitizeNotesHtml(
+                        getPlainText(report.notes).length > 100
+                          ? truncateNotesHtml(report.notes, 100)
+                          : report.notes
+                      ),
+                    }}
+                  />
+                </div>
 
                 {getPlainText(report.notes).length > 100 && (
                   <button
@@ -1821,6 +1918,7 @@ const handleSendMessage = async () => {
               </button>
             )}
           </div>
+
 
           {/* Attachments */}
           {(hasImages || hasVideos) && (
