@@ -27,6 +27,7 @@ import {
   getDraftsByClientId,
   updateDraftWithPdf,
   submitDraft,
+  updateDraft,
   getSubmittedReportsByClientId,
 } from "@/services/reportService";
 
@@ -149,6 +150,17 @@ const [activeDraftId, setActiveDraftId] = useState<number | null>(null);
 const [initialDraftData, setInitialDraftData] = useState<string | null>(null);
 const [isSavingDraft, setIsSavingDraft] = useState(false);
 
+const [autoSaveStatus, setAutoSaveStatus] = useState<
+  "idle" | "saving" | "saved" | "error"
+>("idle");
+
+const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+const autoSaveInProgressRef = useRef(false);
+const autoSavePendingRef = useRef(false);
+const builderDraftDataRef = useRef<string>("");
+const isRestoringDraftRef = useRef(false);
+const activeDraftIdRef = useRef<number | null>(null);
+
 const [draftImageUrls, setDraftImageUrls] = useState<string[]>([]);
 const [draftVideoUrls, setDraftVideoUrls] = useState<string[]>([]);
 const [draftPdfUrl, setDraftPdfUrl] = useState<string | null>(null);
@@ -266,6 +278,7 @@ const [reportMessageStatuses, setReportMessageStatuses] = useState<
  
 const handleContinueDraft = (draft: any) => {
   setActiveDraftId(draft.id);
+  activeDraftIdRef.current = draft.id;
 
   setInitialDraftData(
     draft.draftData || null
@@ -315,6 +328,182 @@ const handleContinueDraft = (draft: any) => {
   });
 };
 
+const scheduleAutoSave = () => {
+  if (!showForm || isRestoringDraftRef.current) return;
+
+  if (autoSaveTimerRef.current) {
+    clearTimeout(autoSaveTimerRef.current);
+  }
+
+  autoSaveTimerRef.current = setTimeout(() => {
+    void runAutoSave();
+  }, 2000);
+};
+
+const handleBuilderDraftDataChange = (draftData: string) => {
+  builderDraftDataRef.current = draftData;
+  scheduleAutoSave();
+};
+
+
+const runAutoSave = async () => {
+  if (!showForm || isRestoringDraftRef.current) return;
+
+  if (autoSaveInProgressRef.current) {
+    autoSavePendingRef.current = true;
+    return;
+  }
+
+  const builderData = builderDraftDataRef.current;
+  if (!builderData) return;
+
+  let parsedBuilderData: any;
+
+  try {
+    parsedBuilderData = JSON.parse(builderData);
+  } catch {
+    return;
+  }
+
+  const hasContent =
+    Boolean(parsedBuilderData.shopName?.trim()) ||
+    Boolean(parsedBuilderData.reportDate) ||
+    Boolean(parsedBuilderData.savedPreviewHtml) ||
+    Boolean(parsedBuilderData.incidents?.some(
+      (item: any) =>
+        item.time?.trim() ||
+        item.branch?.trim() ||
+        item.details?.trim() ||
+        item.status?.trim()
+    )) ||
+    Boolean(parsedBuilderData.vehicleRows?.some(
+      (item: any) =>
+        item.vehicleType ||
+        item.customVehicleType ||
+        item.inside ||
+        item.outside
+    )) ||
+    Boolean(reportData.notes?.trim()) ||
+    Boolean(selectedPdf) ||
+    Boolean(draftPdfUrl) ||
+    selectedImages.length > 0 ||
+    selectedVideos.length > 0 ||
+    draftImageUrls.length > 0 ||
+    draftVideoUrls.length > 0;
+
+  if (!hasContent) return;
+
+  autoSaveInProgressRef.current = true;
+  setAutoSaveStatus("saving");
+
+  try {
+    let newImageUrls: string[] = [];
+    let newVideoUrls: string[] = [];
+
+    if (selectedImages.length > 0) {
+      newImageUrls = await uploadImages(selectedImages);
+    }
+
+    if (selectedVideos.length > 0) {
+      newVideoUrls = await uploadVideos(
+        selectedVideos,
+        removeAudio
+      );
+    }
+
+    const allImageUrls = [
+      ...draftImageUrls,
+      ...newImageUrls,
+    ];
+
+    const allVideoUrls = [
+      ...draftVideoUrls,
+      ...newVideoUrls,
+    ];
+
+    const payload = {
+      clientId: Number(clientId),
+      reportDate:
+        parsedBuilderData.reportDate ||
+        reportData.reportDate ||
+        "",
+      reportTime: reportData.reportTime || "",
+      status: reportData.status,
+      priority: reportData.priority,
+      notes: reportData.notes,
+      imageUrls: allImageUrls,
+      videoUrls: allVideoUrls,
+      videoUrl: allVideoUrls[0] || "",
+      reportLifecycle: "DRAFT",
+      draftData: builderData,
+    };
+
+    let savedDraft;
+
+const currentDraftId = activeDraftIdRef.current ?? activeDraftId;
+
+if (currentDraftId) {
+      savedDraft = await updateDraftWithPdf(
+        currentDraftId,
+        payload,
+        selectedPdf
+      );
+    } else {
+      savedDraft = await createDraft(
+        payload,
+        selectedPdf
+      );
+
+      setActiveDraftId(savedDraft.id);
+      activeDraftIdRef.current = savedDraft.id;
+    }
+
+    setDraftImageUrls(
+      Array.isArray(savedDraft.imageUrls)
+        ? savedDraft.imageUrls
+        : allImageUrls
+    );
+
+    setDraftVideoUrls(
+      Array.isArray(savedDraft.videoUrls)
+        ? savedDraft.videoUrls
+        : allVideoUrls
+    );
+
+    if (savedDraft.pdfUrl) {
+      setDraftPdfUrl(savedDraft.pdfUrl);
+    }
+
+    setSelectedImages([]);
+    clearSelectedVideos();
+    setSelectedPdf(null);
+
+    if (pdfInputRef.current) {
+      pdfInputRef.current.value = "";
+    }
+
+    await loadDrafts();
+    setAutoSaveStatus("saved");
+  } catch (error) {
+    console.error("Auto-save failed:", error);
+    setAutoSaveStatus("error");
+  } finally {
+    autoSaveInProgressRef.current = false;
+
+    if (autoSavePendingRef.current) {
+      autoSavePendingRef.current = false;
+
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+
+      autoSaveTimerRef.current = setTimeout(() => {
+        void runAutoSave();
+      }, 500);
+    }
+  }
+};
+
 
 const handleSaveDraft = async () => {
   if (isSavingDraft) return;
@@ -328,6 +517,7 @@ const handleSaveDraft = async () => {
     );
     return;
   }
+
 
   let builderData: any;
 
@@ -737,6 +927,7 @@ useEffect(() => {
   setActiveDraftId(null);
   setInitialDraftData(null);
 
+  activeDraftIdRef.current = null;
   setDraftImageUrls([]);
   setDraftVideoUrls([]);
   setDraftPdfUrl(null);
@@ -829,6 +1020,7 @@ const handleSendMessage = async () => {
     <DashboardLayout>
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
         {/* Hidden Inputs */}
+        
         <input
           ref={imageGalleryRef}
           type="file"
@@ -837,18 +1029,26 @@ const handleSendMessage = async () => {
           hidden
           onChange={(e) => {
             const files = Array.from(e.target.files || []);
+
             setSelectedImages((prev) => {
               const updated = [...prev, ...files];
+
               if (updated.length > 5) {
                 alert("Maximum 5 images allowed");
                 return prev;
               }
+
               return updated;
             });
+
+            if (files.length > 0) {
+              scheduleAutoSave();
+            }
+
             e.target.value = "";
           }}
         />
-
+     
         <input
           ref={imageCameraRef}
           type="file"
@@ -858,14 +1058,22 @@ const handleSendMessage = async () => {
           hidden
           onChange={(e) => {
             const files = Array.from(e.target.files || []);
+
             setSelectedImages((prev) => {
               const updated = [...prev, ...files];
+
               if (updated.length > 5) {
                 alert("Maximum 5 images allowed");
                 return prev;
               }
+
               return updated;
             });
+
+            if (files.length > 0) {
+              scheduleAutoSave();
+            }
+
             e.target.value = "";
           }}
         />
@@ -876,14 +1084,22 @@ const handleSendMessage = async () => {
             accept="video/*"
             multiple
             hidden
+           
             onChange={(e) => {
               const files = Array.from(e.target.files || []);
+
               setSelectedVideos((prev) => {
                 const remaining = 5 - prev.length;
                 return [...prev, ...files.slice(0, remaining)];
               });
+
+              if (files.length > 0) {
+                scheduleAutoSave();
+              }
+
               e.target.value = "";
             }}
+
           />
 
          <input
@@ -892,40 +1108,52 @@ const handleSendMessage = async () => {
                 accept="video/*"
                 capture="environment"
                 hidden
-                onChange={(e) => {
-                  const files = Array.from(e.target.files || []);
+               
+              onChange={(e) => {
+                const files = Array.from(e.target.files || []);
 
-                  setSelectedVideos((prev) => {
-                    const remaining = 5 - prev.length;
+                setSelectedVideos((prev) => {
+                  const remaining = 5 - prev.length;
 
-                    if (files.length > remaining) {
-                      alert("Maximum 5 videos allowed");
-                    }
+                  if (files.length > remaining) {
+                    alert("Maximum 5 videos allowed");
+                  }
 
-                    return [...prev, ...files.slice(0, remaining)];
-                  });
+                  return [...prev, ...files.slice(0, remaining)];
+                });
 
-                  e.target.value = "";
-                }}
+                if (files.length > 0) {
+                  scheduleAutoSave();
+                }
+
+                e.target.value = "";
+              }}
+
               />
 
         <input
               ref={pdfInputRef}
               type="file"
               accept=".pdf,application/pdf"
-              hidden
-              onChange={(e) => {
-                const file = e.target.files?.[0] || null;
+              hidden          
+            onChange={(e) => {
+              const file = e.target.files?.[0] || null;
 
-                if (file && file.size > 10 * 1024 * 1024) {
-                  alert("PDF size must not exceed 10 MB");
-                  e.target.value = "";
-                  return;
-                }
-
-                setSelectedPdf(file);
+              if (file && file.size > 10 * 1024 * 1024) {
+                alert("PDF size must not exceed 10 MB");
                 e.target.value = "";
-              }}
+                return;
+              }
+
+              setSelectedPdf(file);
+
+              if (file) {
+                scheduleAutoSave();
+              }
+
+              e.target.value = "";
+            }}
+
             />
 
       {/* Header */}
@@ -978,17 +1206,19 @@ const handleSendMessage = async () => {
                 <div className="mb-5">
                     <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider block mb-1.5">
                       Report Notes
-                    </label>
-
+                    </label>            
                     <NotesEditor
                       value={reportData.notes}
-                      onChange={(value) =>
+                      onChange={(value) => {
                         setReportData((prev) => ({
                           ...prev,
                           notes: value,
-                        }))
-                      }
+                        }));
+
+                        scheduleAutoSave();
+                      }}
                     />
+
                   </div>
 
                   {/* Report Status + Priority - BELOW NOTES */}
@@ -1001,13 +1231,18 @@ const handleSendMessage = async () => {
                       </label>
 
                       <select
-                        value={reportData.status}
-                        onChange={(e) =>
-                          setReportData({
-                            ...reportData,
-                            status: e.target.value,
-                          })
-                        }
+                            value={reportData.status}
+                            onChange={(e) => {
+                              const value = e.target.value;
+
+                              setReportData((prev) => ({
+                                ...prev,
+                                status: value,
+                              }));
+
+                              scheduleAutoSave();
+                            }}
+
                         className="w-full border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
                       >
                         <option value="NORMAL">NORMAL</option>
@@ -1022,14 +1257,19 @@ const handleSendMessage = async () => {
                         Priority
                       </label>
 
-                      <select
-                        value={reportData.priority}
-                        onChange={(e) =>
-                          setReportData({
-                            ...reportData,
-                            priority: e.target.value,
-                          })
-                        }
+                    <select               
+                          value={reportData.priority}
+                          onChange={(e) => {
+                            const value = e.target.value;
+
+                            setReportData((prev) => ({
+                              ...prev,
+                              priority: value,
+                            }));
+
+                            scheduleAutoSave();
+                          }}
+
                         className="w-full border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
                       >
                         <option value="LOW">LOW</option>
@@ -1134,6 +1374,7 @@ const handleSendMessage = async () => {
                 <DailySecurityReportBuilder
                     ref={dailyReportBuilderRef}
                     initialDraftData={initialDraftData}
+                    onDraftDataChange={handleBuilderDraftDataChange}
                     onAttachPdf={(file) => {
 
                         if (file.size > 10 * 1024 * 1024) {
@@ -2060,7 +2301,7 @@ const handleSendMessage = async () => {
           </div>
         )}
 
-        {/* Video Viewer Modal */}
+{/* Video Viewer Modal */}
 {selectedViewVideos.length > 0 && (
   <div className="fixed inset-x-0 bottom-0 top-[96px] z-[9999] flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-5">
     <div className="flex max-h-[calc(100dvh-120px)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl animate-scaleIn">

@@ -140,13 +140,14 @@ export type DailySecurityReportBuilderRef = {
 type DailySecurityReportBuilderProps = {
   onAttachPdf: (file: File) => void;
   initialDraftData?: string | null;
+  onDraftDataChange?: (draftData: string) => void;
 };
 
 const DailySecurityReportBuilder = forwardRef<
   DailySecurityReportBuilderRef,
   DailySecurityReportBuilderProps
 >(function DailySecurityReportBuilder(
-  { onAttachPdf, initialDraftData },
+  { onAttachPdf, initialDraftData, onDraftDataChange },
   ref
 ) {
 
@@ -272,6 +273,27 @@ const DailySecurityReportBuilder = forwardRef<
       bold,
     });
   };
+
+  useEffect(() => {
+    onDraftDataChange?.(getDraftData());
+  }, [
+    shopName,
+    shopNameMode,
+    customShopName,
+    reportDate,
+    period,
+    columnHeading,
+    customHeading,
+    savedPreviewHtml,
+    incidents,
+    showSecondTable,
+    vehicleRows,
+    showPreview,
+    fontSize,
+    textColor,
+    bold,
+    onDraftDataChange,
+  ]);
 
   useImperativeHandle(
     ref,
