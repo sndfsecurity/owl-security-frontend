@@ -7,7 +7,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center; /* Card ko exact center me rakhega */
-  padding: 30px 20px 80px; /* Niche 80px diya taaki copyright upar aaye aur proper balance lage */
+  padding: 20px 15px 70px; /* Bottom padding for copyright */
   background: radial-gradient(circle at 20% 30%, rgba(0, 90, 40, 0.15) 0%, transparent 50%),
     radial-gradient(circle at 80% 70%, rgba(7, 22, 51, 0.3) 0%, transparent 40%),
     linear-gradient(145deg, #071633 0%, #0a1f42 100%);
@@ -37,11 +37,11 @@
 
 .card {
   width: 100%;
-  max-width: 480px; /* Desktop ke liye width badhayi (Pehle 440px thi) */
+  max-width: 480px; 
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(20px);
   border-radius: 28px;
-  padding: 40px 40px 30px; /* Desktop pe padding badhayi taaki "latka hua" na lage */
+  padding: 35px 40px 25px;
   text-align: center;
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5),
     0 0 0 1px rgba(255, 255, 255, 0.05);
@@ -55,7 +55,6 @@
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* Glowing orbs */
 .glowOrb, .glowOrb2 {
   position: absolute;
   width: 180px;
@@ -76,15 +75,15 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: 12px;
   position: relative;
 }
 
 .logoWrapper::after {
   content: '';
   position: absolute;
-  width: 100px;
-  height: 100px;
+  width: 90px;
+  height: 90px;
   background: radial-gradient(circle, rgba(0, 90, 40, 0.08) 0%, transparent 70%);
   border-radius: 50%;
 }
@@ -94,25 +93,25 @@
   z-index: 2;
   border-radius: 50%;
   background: white;
-  padding: 6px;
+  padding: 5px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
 .title {
   color: #071633;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 800;
   letter-spacing: 1.5px;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
   line-height: 1.2;
 }
 
 .subtitle {
   color: #005A28;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.5px;
-  margin-bottom: 15px;
+  margin-bottom: 12px;
 }
 
 .divider {
@@ -120,13 +119,13 @@
   height: 3px;
   background: linear-gradient(90deg, #005A28, #00a84a);
   border-radius: 3px;
-  margin: 0 auto 15px;
+  margin: 0 auto 12px;
 }
 
 .secureText {
   color: #64748b;
-  font-size: 13px;
-  margin-bottom: 20px;
+  font-size: 12px;
+  margin-bottom: 16px;
   font-weight: 500;
 }
 
@@ -135,13 +134,13 @@
 }
 
 .inputGroup {
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .inputGroup label {
   display: block;
-  margin-bottom: 6px;
-  font-size: 12px;
+  margin-bottom: 5px;
+  font-size: 11px;
   font-weight: 700;
   color: #071633;
   letter-spacing: 0.5px;
@@ -156,24 +155,24 @@
 
 .inputIcon {
   position: absolute;
-  left: 14px;
+  left: 12px;
   color: #94a3b8;
   pointer-events: none;
 }
 
 .input {
   width: 100%;
-  height: 48px;
-  padding: 0 44px 0 42px;
-  border-radius: 12px;
+  height: 44px;
+  padding: 0 40px 0 38px;
+  border-radius: 10px;
   border: 2px solid #e8edf3;
   background: #f8fafc;
-  font-size: 14px;
+  font-size: 13px;
   color: #071633;
   transition: all 0.3s ease;
 }
 
-.input::placeholder { color: #94a3b8; font-size: 13px; }
+.input::placeholder { color: #94a3b8; font-size: 12px; }
 
 .input:focus {
   outline: none;
@@ -184,7 +183,7 @@
 
 .passwordToggle {
   position: absolute;
-  right: 14px;
+  right: 12px;
   background: none;
   border: none;
   color: #94a3b8;
@@ -197,23 +196,23 @@
   align-items: center;
   gap: 6px;
   color: #dc2626;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
-  padding: 10px 12px;
+  padding: 8px 10px;
   background: #fef2f2;
-  border-radius: 10px;
-  margin-bottom: 14px;
+  border-radius: 8px;
+  margin-bottom: 12px;
   border: 1px solid #fecaca;
 }
 
 .loginBtn {
   width: 100%;
-  height: 50px;
+  height: 46px;
   background: linear-gradient(135deg, #005A28 0%, #008a3a 100%);
   color: white;
   border: none;
-  border-radius: 12px;
-  font-size: 15px;
+  border-radius: 10px;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
   display: flex;
@@ -221,7 +220,7 @@
   align-items: center;
   gap: 8px;
   transition: all 0.3s ease;
-  margin-top: 8px;
+  margin-top: 5px;
 }
 
 .loginBtn:hover:not(:disabled) {
@@ -230,8 +229,8 @@
 }
 
 .spinner {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top: 2px solid white;
   border-radius: 50%;
@@ -246,9 +245,9 @@
 .authBox {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  padding: 12px 14px;
-  margin-top: 20px;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-top: 15px;
   text-align: left;
 }
 
@@ -256,26 +255,26 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 
 .authHeader h3 {
   color: #071633;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   margin: 0;
 }
 
 .authBox p {
   color: #64748b;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.4;
   margin: 0;
 }
 
 .supportSection {
-  margin-top: 16px;
-  padding-top: 16px;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid #e2e8f0;
 }
 
@@ -283,38 +282,38 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 5px;
   color: #475569;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .supportGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 8px;
 }
 
 .supportItem {
   display: flex;
   align-items: flex-start;
-  gap: 6px;
+  gap: 5px;
   text-align: left;
 }
 
-.supportItem svg { margin-top: 1px; flex-shrink: 0; width: 16px; height: 16px; }
+.supportItem svg { margin-top: 1px; flex-shrink: 0; width: 14px; height: 14px; }
 .supportItem div { display: flex; flex-direction: column; }
 
 .supportItem span {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: #071633;
-  margin-bottom: 2px;
+  margin-bottom: 1px;
 }
 
 .supportItem a {
-  font-size: 10px;
+  font-size: 9px;
   color: #005A28;
   text-decoration: none;
   font-weight: 500;
@@ -323,32 +322,31 @@
 
 .bottomSection {
   text-align: center;
-  margin-top: 16px;
-  padding-top: 14px;
+  margin-top: 12px;
+  padding-top: 10px;
   border-top: 1px solid #e8edf3;
 }
 
 .bottomSection p {
   color: #475569;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 
 .version {
   color: #94a3b8;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 500;
 }
 
-/* Copyright ko thoda upar shift kiya (bottom: 35px) */
 .copyright {
   position: absolute;
-  bottom: 35px; /* Pehle 20px tha, ab 35px karke thoda upar laya hai */
+  bottom: 25px;
   left: 50%;
   transform: translateX(-50%);
   color: rgba(255, 255, 255, 0.6);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 400;
   text-align: center;
   z-index: 1;
@@ -361,7 +359,7 @@
 
 @media (max-width: 768px) {
   .page {
-    padding: 20px 15px 60px; /* Mobile pe bhi padding adjust ki */
+    padding: 15px 15px 60px;
   }
   .card {
     max-width: 380px;
@@ -372,12 +370,11 @@
   .subtitle { font-size: 13px; }
   .logo { width: 55px; height: 55px; }
   .logoWrapper::after { width: 75px; height: 75px; }
-  .copyright { font-size: 11px; bottom: 25px; } /* Mobile pe bottom: 25px */
 }
 
 @media (max-width: 480px) {
   .page {
-    padding: 15px 10px 50px;
+    padding: 15px 10px 55px;
   }
   .card {
     max-width: 100%;
@@ -385,33 +382,44 @@
     border-radius: 20px;
   }
   .title { font-size: 18px; }
-  .secureText { font-size: 10px; margin-bottom: 12px; }
+  .subtitle { font-size: 12px; }
+  .secureText { font-size: 10px; margin-bottom: 10px; }
   .input { height: 40px; font-size: 12px; }
   .loginBtn { height: 42px; font-size: 13px; }
   .glowOrb, .glowOrb2 { display: none; }
-  .copyright { font-size: 10px; bottom: 20px; }
 }
 
-/* Height kam wali mobile screens ke liye special fix (No Scroll) */
-@media (max-height: 750px) {
+/* === CRITICAL FIX FOR REAL MOBILE SCREENS (Height < 850px) === */
+@media (max-height: 850px) {
   .page {
-    padding: 10px 10px 45px;
+    padding: 10px 10px 40px;
+    justify-content: center;
   }
   .card {
-    padding: 15px 20px 10px;
+    padding: 15px 20px 12px;
+    max-width: 360px;
+    border-radius: 20px;
   }
-  .logo { width: 40px; height: 40px; }
+  .logo { width: 45px; height: 45px; }
   .logoWrapper { margin-bottom: 5px; }
-  .logoWrapper::after { width: 50px; height: 50px; }
-  .title { font-size: 16px; }
-  .subtitle { font-size: 11px; margin-bottom: 5px; }
+  .logoWrapper::after { width: 55px; height: 55px; }
+  .title { font-size: 16px; margin-bottom: 2px; }
+  .subtitle { font-size: 11px; margin-bottom: 6px; }
   .secureText { display: none; } /* Space bachane ke liye hide kiya */
   .divider { margin-bottom: 8px; }
+  
   .inputGroup { margin-bottom: 8px; }
-  .input { height: 36px; }
-  .loginBtn { height: 38px; }
+  .inputGroup label { margin-bottom: 2px; font-size: 10px; }
+  .input { height: 36px; font-size: 12px; padding: 0 35px 0 32px; }
+  .passwordToggle { right: 10px; }
+  .loginBtn { height: 38px; font-size: 13px; margin-top: 2px; }
+  
   .authBox { margin-top: 8px; padding: 6px 10px; }
+  .authBox p { font-size: 9px; }
+  
   .supportSection { margin-top: 8px; padding-top: 8px; }
-  .bottomSection { display: none; } /* Space bachane ke liye */
-  .copyright { bottom: 15px; } /* Height kam hone par copyright aur upar */
+  .supportHeading { margin-bottom: 6px; font-size: 10px; }
+  
+  .bottomSection { display: none; } /* Isko hide kiya taaki sab fit ho */
+  .copyright { bottom: 12px; font-size: 10px; }
 }
