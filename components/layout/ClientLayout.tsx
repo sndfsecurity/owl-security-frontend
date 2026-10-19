@@ -9,6 +9,7 @@ import {
   FiUser,
   FiLogOut,
   FiX,
+  FiHeadphones,
 } from "react-icons/fi";
 
 import NotificationPermissionPrompt from "@/components/NotificationPermissionPrompt";
@@ -111,6 +112,11 @@ export default function ClientLayout({
       name: "My Profile",
       href: "/client/profile",
       icon: <FiUser size={20} />,
+    },
+    {
+      name: "Help & Support",
+      href: "/client/help-support",
+      icon: <FiHeadphones size={20} />,
     },
   ];
 
