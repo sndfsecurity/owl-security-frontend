@@ -384,6 +384,21 @@ export default function LoginPage() {
         </div>
       </div>
 
+      
+      <div className={styles.supportBox}>
+        <span className={styles.supportText}>
+          Having trouble logging in?
+        </span>
+
+        <a
+          href="tel:+918956159489"
+          className={styles.supportLink}
+        >
+          Call Support: +91 8956159489
+        </a>
+      </div>
+
+
       <div className={styles.copyright}>
         © 2026 Owl Security Services
       </div>
