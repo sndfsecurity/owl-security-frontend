@@ -20,17 +20,17 @@ export default function HelpSupportPage() {
   const supportPhones = [
   {
     label: "Primary Contact",
-    number: "+91 8956159489",
+    number: "+91 7378950765",
   },
   {
     label: "Alternative Contact",
-    number: "+91 8484811570",
+    number: "+91 8010177541",
   },
 
-//   {
-//     label: "Additional Contact",
-//     number: "+91 YOUR_NUMBER_3",
-//   },
+  {
+    label: "Additional Contact",
+    number: "+91 8956159489",
+  },
 
 ];
 
