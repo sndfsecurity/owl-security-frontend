@@ -667,3 +667,15 @@
     font-size: 11px;
   }
 }
+
+
+/* Prevent scrolling on mobile login screen */
+@media (max-width: 480px) {
+  .page {
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+}
