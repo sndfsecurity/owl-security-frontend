@@ -18,6 +18,7 @@ export default function ClientDashboardPage() {
   const [name, setName] = useState("");
   const [client, setClient] = useState<any>(null);
   const [reports, setReports] = useState<any[]>([]);
+  const [reportCounts, setReportCounts] = useState<any>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -26,31 +27,76 @@ export default function ClientDashboardPage() {
 
     setName(storedName);
 
-    const loadData = async () => {
-      try {
-        const userId = Number(
-          localStorage.getItem("userId")
-        );
+    
+    
+const loadData = async () => {
+  try {
+    const userId = Number(
+      localStorage.getItem("userId")
+    );
 
-        const clientData =
-          await getClientByUserId(userId);
+    const clientData =
+      await getClientByUserId(userId);
 
-        setClient(clientData);
+    setClient(clientData);
 
-        const reportData =
-          await getSubmittedReportsByClientId(
-            clientData.id
-          );
+    // First request: get total count and latest 5 reports
+    const reportData =
+      await getSubmittedReportsByClientId(
+        clientData.id,
+        0,
+        5
+      );
 
-          console.log(reportData);
+    setReports(reportData.content || []);
+    setReportCounts(reportData);
 
-          setReports(reportData.content || []);
-      } catch (error) {
-        console.error(error);
-      }
-    };
+    // Fetch remaining pages to calculate accurate status counts
+    const totalPages = reportData.totalPages || 1;
 
-    loadData();
+    const remainingRequests = [];
+
+    for (let page = 1; page < totalPages; page++) {
+      remainingRequests.push(
+        getSubmittedReportsByClientId(
+          clientData.id,
+          page,
+          5
+        )
+      );
+    }
+
+    const remainingPages =
+      await Promise.all(remainingRequests);
+
+    const allReports = [
+      ...(reportData.content || []),
+      ...remainingPages.flatMap(
+        (pageData) => pageData.content || []
+      ),
+    ];
+
+    setReportCounts({
+      ...reportData,
+      totalElements: reportData.totalElements,
+      normalReports: allReports.filter(
+        (r) => r.status === "NORMAL"
+      ).length,
+      observationReports: allReports.filter(
+        (r) => r.status === "OBSERVATION"
+      ).length,
+      incidentReports: allReports.filter(
+        (r) => r.status === "INCIDENT"
+      ).length,
+    });
+
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+loadData();
+
   }, []);
 
   // notification useEffect 
@@ -121,23 +167,19 @@ export default function ClientDashboardPage() {
   ///////////////////////////////////////////////////////////////
 
   
-  const reportList = Array.isArray(reports)
+const reportList = Array.isArray(reports)
   ? reports
   : [];
 
-const totalReports = reportList.length;
+const totalReports = reportCounts?.totalElements ?? 0;
 
-const normalReports = reportList.filter(
-  (r) => r.status === "NORMAL"
-).length;
+const normalReports = reportCounts?.normalReports ?? 0;
 
-const observationReports = reportList.filter(
-  (r) => r.status === "OBSERVATION"
-).length;
+const observationReports =
+  reportCounts?.observationReports ?? 0;
 
-const incidentReports = reportList.filter(
-  (r) => r.status === "INCIDENT"
-).length;
+const incidentReports =
+  reportCounts?.incidentReports ?? 0;
 
 
   return (

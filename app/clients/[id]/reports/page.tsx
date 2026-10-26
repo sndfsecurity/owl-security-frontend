@@ -1728,7 +1728,8 @@ const handleSendMessage = async () => {
           </div>
         )}
 
-        {/* Draft Reports */}
+{/* Draft Reports */}
+
 <div className="mb-6 sm:mb-8">
   <div className="bg-white rounded-2xl shadow-xl border border-amber-100 overflow-hidden">
     <div className="px-4 sm:px-6 py-4 border-b border-amber-100 bg-gradient-to-r from-amber-50 to-orange-50">
