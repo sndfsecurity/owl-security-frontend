@@ -26,12 +26,14 @@ export default function DashboardPage() {
   useEffect(() => {
     const loadDashboard = async () => {
       try {
-        const data = await getDashboardData();
+             
+        const [data, reportData, clientsData] = await Promise.all([
+          getDashboardData(),
+          getRecentReports(),
+          getClients(),
+        ]);
+
         setStats(data);
-
-        const reportData = await getRecentReports();
-        const clientsData = await getClients();
-
         setRecentReports(Array.isArray(reportData) ? reportData : []);
         setClients(clientsData);
         setRecentClients(clientsData.slice(0, 5));

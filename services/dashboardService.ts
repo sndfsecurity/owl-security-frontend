@@ -1,3 +1,4 @@
+
 import API_BASE_URL from "./api";
 
 export async function getDashboardData() {
@@ -12,6 +13,10 @@ export async function getDashboardData() {
       },
     }
   );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch dashboard data");
+  }
 
   return response.json();
 }
