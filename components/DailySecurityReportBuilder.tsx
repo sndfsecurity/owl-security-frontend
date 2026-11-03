@@ -2019,15 +2019,6 @@ const attachPdf = async () => {
                 )}
               </div>
 
-              <div className="flex items-end justify-end">
-                <button
-                  type="button"
-                  onClick={addIncident}
-                  className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                >
-                  + Add Row
-                </button>
-              </div>
             </div>
 
             <div className="space-y-4">
@@ -2169,6 +2160,17 @@ const attachPdf = async () => {
                 </div>
               ))}
             </div>
+
+           <div className="mt-3 flex items-end justify-end">
+                <button
+                  type="button"
+                  onClick={addIncident}
+                  className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                >
+                  + Add Row
+                </button>
+              </div>
+
           </div>
 
           <div className="mt-5 rounded-lg border border-slate-200 bg-white p-3">
