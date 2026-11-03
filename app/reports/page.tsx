@@ -284,6 +284,14 @@ export default function ReportsPage() {
                       </div>
                     </div>
 
+                    {/* Shop Name */}
+                    <div className="mb-3">
+                      <p className="text-xs text-slate-400 font-medium">Shop Name</p>
+                      <p className="text-sm font-semibold text-indigo-700 break-words">
+                        {report.shopName || "N/A"}
+                      </p>
+                    </div>
+
                     {/* Status */}
                     <div className="mb-3">
                       <span
@@ -389,6 +397,7 @@ export default function ReportsPage() {
                     <th className="p-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Client</th>
                     <th className="p-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Date</th>
                     <th className="p-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Time</th>
+                    <th className="p-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Shop Name</th>
                     <th className="p-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
                     <th className="p-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Priority</th>
                     <th className="p-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Notes</th>
@@ -408,6 +417,9 @@ export default function ReportsPage() {
                       </td>
                       <td className="p-4 text-sm text-slate-600">{report.reportDate || "N/A"}</td>
                       <td className="p-4 text-sm text-slate-600">{report.reportTime || "N/A"}</td>
+                      <td className="p-4 text-sm font-semibold text-indigo-700">
+                        {report.shopName || "N/A"}
+                      </td>
                       <td className="p-4">
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-semibold ${

@@ -68,7 +68,7 @@ const HEADING_OPTIONS = [
   "Manual Entry",
 ];
 
-const SHOP_NAME_OPTIONS = [
+export const SHOP_NAME_OPTIONS = [
   "HOTEL",
   "Jewellery shop",
   "Kumkum sosayti",

@@ -11,8 +11,8 @@ import { getClientById } from "@/services/clientService";
 
 import DailySecurityReportBuilder, {
   DailySecurityReportBuilderRef,
+  SHOP_NAME_OPTIONS,
 } from "@/components/DailySecurityReportBuilder";
-
 
 import {
   uploadImages,
@@ -128,14 +128,13 @@ const truncateNotesHtml = (
   return doc.body.innerHTML;
 };
 
-
-
-
 export default function ClientReportsPage() {
 const params = useParams();
 const searchParams = useSearchParams();
 const pendingNotificationReportId = useRef<number | null>(null);
 const handledNotificationRef = useRef<string | null>(null);
+const [reportShopName, setReportShopName] = useState("");
+const [reportShopNameCustom, setReportShopNameCustom] = useState("");
 
   const clientId = Number(params.id);
   const [showForm, setShowForm] = useState(false);
@@ -284,6 +283,19 @@ const handleContinueDraft = (draft: any) => {
     draft.draftData || null
   );
 
+  const savedShopName = draft.shopName || "";
+
+  if (SHOP_NAME_OPTIONS.includes(savedShopName)) {
+    setReportShopName(savedShopName);
+    setReportShopNameCustom("");
+  } else if (savedShopName) {
+    setReportShopName("Manual Entry");
+    setReportShopNameCustom(savedShopName);
+  } else {
+    setReportShopName("");
+    setReportShopNameCustom("");
+  }
+
   setReportData({
     reportDate: draft.reportDate || "",
     reportTime: draft.reportTime || "",
@@ -423,6 +435,10 @@ const runAutoSave = async () => {
 
     const payload = {
       clientId: Number(clientId),
+      shopName:
+      reportShopName === "Manual Entry"
+      ? reportShopNameCustom.trim()
+    : reportShopName,
       reportDate:
         parsedBuilderData.reportDate ||
         reportData.reportDate ||
@@ -586,6 +602,10 @@ const handleSaveDraft = async () => {
 
     const payload = {
       clientId: clientId,
+      shopName:
+      reportShopName === "Manual Entry"
+      ? reportShopNameCustom.trim()
+    : reportShopName,
       reportDate: builderData.reportDate || "",
       reportTime: reportData.reportTime || "",
       status: reportData.status,
@@ -704,6 +724,10 @@ const handleSubmit = async () => {
 
     const payload = {
       clientId: clientId,
+      shopName:
+      reportShopName === "Manual Entry"
+      ? reportShopNameCustom.trim()
+    : reportShopName,
       reportDate: "",
       reportTime: "",
       status: reportData.status,
@@ -742,6 +766,9 @@ const handleSubmit = async () => {
 
     setActiveDraftId(null);
     setInitialDraftData(null);
+
+    setReportShopName("");
+    setReportShopNameCustom("");
 
     setDraftImageUrls([]);
     setDraftVideoUrls([]);
@@ -927,6 +954,9 @@ useEffect(() => {
   setActiveDraftId(null);
   setInitialDraftData(null);
 
+  setReportShopName("");
+  setReportShopNameCustom("");
+
   activeDraftIdRef.current = null;
   setDraftImageUrls([]);
   setDraftVideoUrls([]);
@@ -1017,6 +1047,7 @@ const handleSendMessage = async () => {
   
 
   return (
+
     <DashboardLayout>
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
         {/* Hidden Inputs */}
@@ -1220,65 +1251,103 @@ const handleSendMessage = async () => {
                     />
 
                   </div>
+                  
+                   
+              {/* Shop Name + Report Status + Priority */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 mb-5">
 
-                  {/* Report Status + Priority - BELOW NOTES */}
-                  <div className="flex flex-col sm:flex-row gap-4 sm:gap-5">
+                {/* Shop Name - First */}
+                <div className="w-full min-w-0">
+                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider block mb-1.5">
+                    Shop Name
+                  </label>
 
-                    {/* Report Status */}
-                    <div className="w-full sm:w-64">
-                      <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider block mb-1.5">
-                        Report Status
-                      </label>
+                  <select
+                    value={reportShopName}
+                    onChange={(e) => {
+                      setReportShopName(e.target.value);
+                      setReportShopNameCustom("");
+                      scheduleAutoSave();
+                    }}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                  >
+                    <option value="">Select Shop Name</option>
 
-                      <select
-                            value={reportData.status}
-                            onChange={(e) => {
-                              const value = e.target.value;
+                    {SHOP_NAME_OPTIONS.map((shop) => (
+                      <option key={shop} value={shop}>
+                        {shop}
+                      </option>
+                    ))}
+                  </select>
 
-                              setReportData((prev) => ({
-                                ...prev,
-                                status: value,
-                              }));
+                  {reportShopName === "Manual Entry" && (
+                    <input
+                      type="text"
+                      value={reportShopNameCustom}
+                      onChange={(e) => {
+                        setReportShopNameCustom(e.target.value);
+                        scheduleAutoSave();
+                      }}
+                      placeholder="Enter shop name"
+                      className="w-full mt-2 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    />
+                  )}
+                </div>
 
-                              scheduleAutoSave();
-                            }}
+                {/* Report Status - Second */}
+                <div className="w-full min-w-0">
+                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider block mb-1.5">
+                    Report Status
+                  </label>
 
-                        className="w-full border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                      >
-                        <option value="NORMAL">NORMAL</option>
-                        <option value="OBSERVATION">OBSERVATION</option>
-                        <option value="INCIDENT">INCIDENT</option>
-                      </select>
-                    </div>
+                  <select
+                    value={reportData.status}
+                    onChange={(e) => {
+                      const value = e.target.value;
 
-                    {/* Priority */}
-                    <div className="w-full sm:w-64">
-                      <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider block mb-1.5">
-                        Priority
-                      </label>
+                      setReportData((prev) => ({
+                        ...prev,
+                        status: value,
+                      }));
 
-                    <select               
-                          value={reportData.priority}
-                          onChange={(e) => {
-                            const value = e.target.value;
+                      scheduleAutoSave();
+                    }}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                  >
+                    <option value="NORMAL">NORMAL</option>
+                    <option value="OBSERVATION">OBSERVATION</option>
+                    <option value="INCIDENT">INCIDENT</option>
+                  </select>
+                </div>
 
-                            setReportData((prev) => ({
-                              ...prev,
-                              priority: value,
-                            }));
+                {/* Priority - Third */}
+                <div className="w-full min-w-0">
+                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider block mb-1.5">
+                    Priority
+                  </label>
 
-                            scheduleAutoSave();
-                          }}
+                  <select
+                    value={reportData.priority}
+                    onChange={(e) => {
+                      const value = e.target.value;
 
-                        className="w-full border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                      >
-                        <option value="LOW">LOW</option>
-                        <option value="MEDIUM">MEDIUM</option>
-                        <option value="HIGH">HIGH</option>
-                      </select>
-                    </div>
+                      setReportData((prev) => ({
+                        ...prev,
+                        priority: value,
+                      }));
 
-                  </div>
+                      scheduleAutoSave();
+                    }}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                  >
+                    <option value="LOW">LOW</option>
+                    <option value="MEDIUM">MEDIUM</option>
+                    <option value="HIGH">HIGH</option>
+                  </select>
+                </div>
+
+              </div>
+
 
                 
                 <div className="mt-4">
@@ -1781,6 +1850,12 @@ const handleSendMessage = async () => {
                   : "N/A"}
               </p>
 
+              {draft.shopName && (
+                <p className="mt-2 text-sm font-semibold text-indigo-700">
+                  Shop Name: {draft.shopName}
+                </p>
+              )}
+
               {draft.status && (
                 <p className="mt-1 text-xs text-slate-500">
                   Status: {draft.status}
@@ -1823,6 +1898,7 @@ const handleSendMessage = async () => {
                 <tr className="border-b-2 border-slate-200 bg-slate-50">
                   <th className="p-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Date</th>
                   <th className="p-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Time</th>
+                  <th className="p-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Shop Name</th>
                   <th className="p-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
                   <th className="p-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Priority</th>
                   <th className="p-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Notes</th>
@@ -1840,6 +1916,9 @@ const handleSendMessage = async () => {
                   >
                     <td className="p-4 text-sm font-medium text-slate-700">{report.reportDate || "N/A"}</td>
                     <td className="p-4 text-sm text-slate-600">{report.reportTime || "N/A"}</td>
+                    <td className="p-4 text-sm font-semibold text-indigo-700">
+                        {report.shopName || "N/A"}
+                    </td>
                     <td className="p-4">
                       <span className={`
                         px-3 py-1 rounded-full text-xs font-semibold
@@ -2093,6 +2172,17 @@ const handleSendMessage = async () => {
 
         {/* Body */}
         <div className="space-y-4 p-4">
+          {/* Shop Name */}
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs font-medium text-slate-500">
+              Shop Name
+            </span>
+
+            <span className="max-w-[65%] break-words text-right text-sm font-semibold text-indigo-700">
+              {report.shopName || "N/A"}
+            </span>
+          </div>
+
           {/* Priority */}
           <div className="flex items-center justify-between gap-3">
             <span className="text-xs font-medium text-slate-500">

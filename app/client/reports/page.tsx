@@ -704,9 +704,9 @@ const truncateNotesHtml = (
 
 <div className="hidden md:block w-full overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
 
-  <table className="w-full min-w-[760px] table-fixed">
+  <table className="w-full min-w-[850px] table-fixed">
 
-    <thead>
+<thead>
 
 <tr className="bg-red-900 text-white">
         <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide">
@@ -715,6 +715,10 @@ const truncateNotesHtml = (
 
         <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide">
           Time
+        </th>
+
+        <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide">
+          Shop Name
         </th>
 
         <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide">
@@ -755,6 +759,10 @@ const truncateNotesHtml = (
 
   <td className="p-3">
     {report.reportTime}
+  </td>
+
+  <td className="p-3 text-sm font-semibold text-indigo-700 break-words">
+  {report.shopName || "N/A"}
   </td>
 
   <td className="p-3">
@@ -945,6 +953,17 @@ const truncateNotesHtml = (
 
         {/* Body */}
         <div className="space-y-4 p-4">
+
+        {/* Shop Name */}
+          <div className="rounded-xl border border-indigo-100 bg-indigo-50 p-3">
+            <p className="text-xs font-medium text-slate-500">
+              Shop Name
+            </p>
+            <p className="mt-1 text-sm font-semibold text-indigo-700 break-words">
+              {report.shopName || "N/A"}
+            </p>
+          </div>
+
           {/* Status and Priority */}
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
