@@ -53,9 +53,10 @@ const STATUS_OPTIONS = [
 const DETAIL_OPTIONS = [
   "शॉप बंद हुई।",
   "शॉप शुरू हुई।",
-  "ऑनलाईन पेमेंट किया",
-  "कॅश पेमेंट किया",
-   "दो ग्राहक आये",
+  "दो ग्राहक आये ऑनलाईन पेमेंट किया",
+  "दो ग्राहक आये कॅश पेमेंट किया",
+  "दो ग्राहक आये",
+  "दो ग्राहक गये",
   "लापरवाही|",
   "Manual Entry",
 ];
@@ -74,6 +75,7 @@ const SHOP_NAME_OPTIONS = [
   "Phone docter",
   "HOTEL comfort",
   "First visit",
+  "Maple inn hotel",
   "Garment Shop",
   "Gold shop",
   "Home",
