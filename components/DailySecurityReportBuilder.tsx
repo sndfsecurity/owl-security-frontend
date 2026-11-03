@@ -1,6 +1,8 @@
 
 "use client";
 
+import TimeInput from "@/components/TimeInput";
+
 import {
   forwardRef,
   useEffect,
@@ -2047,16 +2049,15 @@ const attachPdf = async () => {
                       <label className="mb-1 block text-xs text-slate-600">
                         समय / Time
                       </label>
-                      <input
-                        type="time"
-                        step="1"
-                        lang="en-GB"
-                        value={incident.time}
-                        onChange={(e) =>
-                          updateIncident(index, "time", e.target.value)
-                        }
-                        className={inputClass}
-                      />
+
+                      <TimeInput
+                          value={incident.time}
+                          onChange={(value) =>
+                            updateIncident(index, "time", value)
+                          }
+                          className={inputClass}
+                        />
+
                     </div>
 
                     <div>
