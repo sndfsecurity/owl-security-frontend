@@ -1,13 +1,14 @@
 // app/clients/[id]/reports/page.tsx
 "use client";
 
-
 import NotesViewer from "@/components/NotesViewer";
 import { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { FiDownload } from "react-icons/fi";
 import { getClientById } from "@/services/clientService";
+import TypingLanguageSelector from "@/components/TypingLanguageSelector";
+import type { TypingLanguage } from "@/lib/transliteration";
 
 import DailySecurityReportBuilder, {
   DailySecurityReportBuilderRef,
@@ -204,6 +205,7 @@ const [reportMessageStatuses, setReportMessageStatuses] = useState<
   Record<number, ReportMessageStatus>
 >({});
 
+const [typingLanguage, setTypingLanguage] = useState<TypingLanguage>("en");
 
   const [reportData, setReportData] = useState({
     reportDate: "",
@@ -1224,6 +1226,18 @@ const handleSendMessage = async () => {
         {/* Create Report Form */}
         {showForm && (
           <div className="mb-6 sm:mb-8 animate-slideDown">
+
+                <div className="sticky top-0 z-40 mb-4 flex items-center justify-between rounded-lg border border-blue-200 bg-white p-3 shadow-sm">
+                  <span className="text-sm font-semibold text-slate-700">
+                    Typing Language
+                  </span>
+
+                  <TypingLanguageSelector
+                    language={typingLanguage}
+                    onChange={setTypingLanguage}
+                  />
+                </div>
+
             <div className="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
               <div className="px-4 sm:px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600">
                 <h2 className="text-white font-bold text-lg sm:text-xl">
@@ -1240,6 +1254,7 @@ const handleSendMessage = async () => {
                     </label>            
                     <NotesEditor
                       value={reportData.notes}
+                      typingLanguage={typingLanguage}
                       onChange={(value) => {
                         setReportData((prev) => ({
                           ...prev,
@@ -1444,6 +1459,7 @@ const handleSendMessage = async () => {
                     ref={dailyReportBuilderRef}
                     initialDraftData={initialDraftData}
                     onDraftDataChange={handleBuilderDraftDataChange}
+                    typingLanguage={typingLanguage}
                     onAttachPdf={(file) => {
 
                         if (file.size > 10 * 1024 * 1024) {

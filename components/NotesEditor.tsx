@@ -1,16 +1,20 @@
 
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Extension } from "@tiptap/core";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
+import type { TypingLanguage } from "@/lib/transliteration";
+import { getTransliterationSuggestions } from "@/lib/transliteration";
+import TransliterationSuggestions from "@/components/TransliterationSuggestions";
 
 interface NotesEditorProps {
   value: string;
   onChange: (value: string) => void;
+  typingLanguage: TypingLanguage;
 }
 
 const FontSize = Extension.create({
@@ -40,7 +44,12 @@ const FontSize = Extension.create({
 export default function NotesEditor({
   value,
   onChange,
+  typingLanguage,
 }: NotesEditorProps) {
+
+const [suggestions, setSuggestions] = useState<string[]>([]);
+const [currentWord, setCurrentWord] = useState("");
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -52,6 +61,12 @@ export default function NotesEditor({
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
+
+      const text = editor.getText();
+      const match = text.match(/[a-zA-Z]+$/);
+
+      setCurrentWord(match ? match[0] : "");
+      setSuggestions([]);
     },
     editorProps: {
       attributes: {
@@ -60,6 +75,24 @@ export default function NotesEditor({
       },
     },
   });
+
+  useEffect(() => {
+  if (typingLanguage === "en" || currentWord.length < 2) {
+    setSuggestions([]);
+    return;
+  }
+
+  const timer = setTimeout(async () => {
+    const results = await getTransliterationSuggestions(
+      currentWord,
+      typingLanguage
+    );
+
+    setSuggestions(results);
+  }, 300);
+
+  return () => clearTimeout(timer);
+  }, [currentWord, typingLanguage]);
 
   useEffect(() => {
     if (editor && value !== editor.getHTML()) {
@@ -91,6 +124,26 @@ export default function NotesEditor({
     .setTextSelection({ from, to })
     .setMark("textStyle", { fontSize: `${newSize}px` })
     .run();
+};
+
+
+const selectSuggestion = (suggestion: string) => {
+  if (!editor) return;
+
+  const position = editor.state.selection.from;
+
+  editor
+    .chain()
+    .focus()
+    .deleteRange({
+      from: position - currentWord.length,
+      to: position,
+    })
+    .insertContent(suggestion + " ")
+    .run();
+
+  setSuggestions([]);
+  setCurrentWord("");
 };
 
   return (
@@ -169,6 +222,13 @@ export default function NotesEditor({
           • List
         </button>
       </div>
+
+      {suggestions.length > 0 && (
+        <TransliterationSuggestions
+          suggestions={suggestions}
+          onSelect={selectSuggestion}
+        />
+      )}
 
       <EditorContent editor={editor} />
     </div>

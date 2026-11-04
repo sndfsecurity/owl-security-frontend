@@ -3,6 +3,10 @@
 
 import TimeInput from "@/components/TimeInput";
 
+import type { TypingLanguage } from "@/lib/transliteration";
+import { getTransliterationSuggestions } from "@/lib/transliteration";
+import TransliterationSuggestions from "@/components/TransliterationSuggestions";
+
 import {
   forwardRef,
   useEffect,
@@ -148,13 +152,14 @@ type DailySecurityReportBuilderProps = {
   onAttachPdf: (file: File) => void;
   initialDraftData?: string | null;
   onDraftDataChange?: (draftData: string) => void;
+  typingLanguage: TypingLanguage;
 };
 
 const DailySecurityReportBuilder = forwardRef<
   DailySecurityReportBuilderRef,
   DailySecurityReportBuilderProps
 >(function DailySecurityReportBuilder(
-  { onAttachPdf, initialDraftData, onDraftDataChange },
+  { onAttachPdf, initialDraftData, onDraftDataChange, typingLanguage },
   ref
 ) {
 
@@ -179,6 +184,14 @@ const DailySecurityReportBuilder = forwardRef<
   const savedRangeRef = useRef<Range | null>(null);
 
   const [attachingPdf, setAttachingPdf] = useState(false);
+
+  const [activeInput, setActiveInput] = useState<{
+      index: number;
+      field: string;
+    } | null>(null);
+
+const [suggestions, setSuggestions] = useState<string[]>([]);
+const [currentWord, setCurrentWord] = useState("");
 
   const [showSecondTable, setShowSecondTable] = useState(false);
   const [vehicleRows, setVehicleRows] = useState<VehicleRow[]>([
@@ -253,6 +266,35 @@ const DailySecurityReportBuilder = forwardRef<
       console.error("Failed to restore Daily Security Report draft:", error);
     }
   }, [initialDraftData]);
+
+    const handleTransliteration = async (
+    value: string,
+    index: number,
+    field: string
+  ) => {
+    if (typingLanguage === "en") {
+      setSuggestions([]);
+      return;
+    }
+
+    const match = value.match(/[a-zA-Z]+$/);
+    const word = match?.[0] || "";
+
+    setCurrentWord(word);
+    setActiveInput({ index, field });
+
+    if (word.length < 2) {
+      setSuggestions([]);
+      return;
+    }
+
+    const results = await getTransliterationSuggestions(
+      word,
+      typingLanguage
+    );
+
+    setSuggestions(results);
+  };
 
 
     const getDraftData = () => {
@@ -1954,18 +1996,38 @@ const attachPdf = async () => {
                 </select>
 
                 {shopNameMode === "Manual Entry" && (
+                  <>
                   <input
                     value={customShopName}
                     onChange={(e) => {
                       const value = e.target.value;
                       setCustomShopName(value);
                       setShopName(value);
+                      handleTransliteration(value, 0, "customShopName");
                     }}
                     placeholder="Enter shop name"
                     className={`${inputClass} mt-2`}
                   />
+
+                  <TransliterationSuggestions
+                    suggestions={
+                      activeInput?.field === "customShopName" ? suggestions : []
+                    }
+                    onSelect={(suggestion) => {
+                      const updatedValue =
+                        customShopName.replace(/[a-zA-Z]+$/, suggestion) + " ";
+
+                      setCustomShopName(updatedValue);
+                      setShopName(updatedValue);
+                      setSuggestions([]);
+                      setCurrentWord("");
+                      setActiveInput(null);
+                    }}
+                  />
+
+                  </>
                 )}
-              </div>
+              </div>           
 
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">
@@ -1983,12 +2045,35 @@ const attachPdf = async () => {
               <label className="mb-1 block text-sm font-medium text-slate-700">
                 Reporting Period
               </label>
-              <input
-                value={period}
-                onChange={(e) => setPeriod(e.target.value)}
-                placeholder="e.g. Night Shift / 12 AM to 8 AM"
-                className={inputClass}
-              />
+
+             <div className="relative">
+                  <input
+                    value={period}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setPeriod(value);
+                      handleTransliteration(value, 1, "period");
+                    }}
+                    placeholder="e.g. Night Shift / 12 AM to 8 AM"
+                    className={inputClass}
+                  />
+
+                  <TransliterationSuggestions
+                    suggestions={
+                      activeInput?.field === "period" ? suggestions : []
+                    }
+                    onSelect={(suggestion) => {
+                      const updatedValue =
+                        period.replace(/[a-zA-Z]+$/, suggestion) + " ";
+
+                      setPeriod(updatedValue);
+                      setSuggestions([]);
+                      setCurrentWord("");
+                      setActiveInput(null);
+                    }}
+                  />
+                </div>
+
             </div>
           </div>
 
@@ -2017,12 +2102,35 @@ const attachPdf = async () => {
                 </select>
 
                 {columnHeading === "Manual Entry" && (
-                  <input
-                    value={customHeading}
-                    onChange={(e) => setCustomHeading(e.target.value)}
-                    placeholder="Enter column heading"
-                    className={`${inputClass} mt-2`}
-                  />
+
+                 <div className="relative mt-2">
+                      <input
+                        value={customHeading}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setCustomHeading(value);
+                          handleTransliteration(value, 2, "customHeading");
+                        }}
+                        placeholder="Enter column heading"
+                        className={inputClass}
+                      />
+
+                      <TransliterationSuggestions
+                        suggestions={
+                          activeInput?.field === "customHeading" ? suggestions : []
+                        }
+                        onSelect={(suggestion) => {
+                          const updatedValue =
+                            customHeading.replace(/[a-zA-Z]+$/, suggestion) + " ";
+
+                          setCustomHeading(updatedValue);
+                          setSuggestions([]);
+                          setCurrentWord("");
+                          setActiveInput(null);
+                        }}
+                      />
+                    </div>
+
                 )}
               </div>
 
@@ -2108,18 +2216,43 @@ const attachPdf = async () => {
                         ))}
                       </select>
 
-                      {(incident.details === "" ||
-                        isCustom(incident.details, DETAIL_OPTIONS)) && (
-                        <textarea
-                          value={incident.details}
-                          onChange={(e) =>
-                            updateIncident(index, "details", e.target.value)
-                          }
-                          placeholder="Enter incident details"
-                          rows={2}
-                          className={`${inputClass} mt-2`}
-                        />
-                      )}
+                     {(incident.details === "" ||
+                          isCustom(incident.details, DETAIL_OPTIONS)) && (
+                          <>
+                            <div className="relative mt-2">
+                              <textarea
+                                value={incident.details}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  updateIncident(index, "details", value);
+                                  handleTransliteration(value, index, "details");
+                                }}
+                                placeholder="Enter incident details"
+                                rows={2}
+                                className={inputClass}
+                              />
+
+                              <TransliterationSuggestions
+                                suggestions={
+                                  activeInput?.field === "details" &&
+                                  activeInput?.index === index
+                                    ? suggestions
+                                    : []
+                                }
+                                onSelect={(suggestion) => {
+                                  const updatedValue =
+                                    incident.details.replace(/[a-zA-Z]+$/, suggestion) + " ";
+
+                                  updateIncident(index, "details", updatedValue);
+                                  setSuggestions([]);
+                                  setCurrentWord("");
+                                  setActiveInput(null);
+                                }}
+                              />
+                            </div>
+                          </>
+                        )}
+
                     </div>
 
                     <div>
@@ -2150,17 +2283,41 @@ const attachPdf = async () => {
                         ))}
                       </select>
 
-                      {(incident.status === "" ||
-                        isCustom(incident.status, STATUS_OPTIONS)) && (
-                        <input
-                          value={incident.status}
-                          onChange={(e) =>
-                            updateIncident(index, "status", e.target.value)
-                          }
-                          placeholder="Enter security status"
-                          className={`${inputClass} mt-2`}
-                        />
-                      )}
+                        {(incident.status === "" ||
+                            isCustom(incident.status, STATUS_OPTIONS)) && (
+                            <div className="relative mt-2">
+                              <input
+                                value={incident.status}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  updateIncident(index, "status", value);
+                                  handleTransliteration(value, index, "status");
+                                }}
+                                placeholder="Enter security status"
+                                className={inputClass}
+                              />
+
+                              <TransliterationSuggestions
+                                suggestions={
+                                  activeInput?.field === "status" &&
+                                  activeInput?.index === index
+                                    ? suggestions
+                                    : []
+                                }
+                                onSelect={(suggestion) => {
+                                  const updatedValue =
+                                    incident.status.replace(/[a-zA-Z]+$/, suggestion) + " ";
+
+                                  updateIncident(index, "status", updatedValue);
+                                  setSuggestions([]);
+                                  setCurrentWord("");
+                                  setActiveInput(null);
+                                }}
+                              />
+                            </div>
+                          )}
+                                              
+
                     </div>
                   </div>
                 </div>
